@@ -1,0 +1,835 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+  <title>Hunter Grocery List</title>
+  <style>
+    *{margin:0;padding:0;box-sizing:border-box;-webkit-tap-highlight-color:transparent}
+    :root{
+      --green:#2E7D32;--green2:#43A047;--green-pale:#E8F5E9;
+      --text:#212121;--light:#757575;--bg:#F0F4F0;--card:#fff;
+      --border:#E0E0E0;--checked:#BDBDBD;--red:#E53935;
+    }
+    body{font-family:-apple-system,BlinkMacSystemFont,'Segoe UI',Roboto,sans-serif;
+      background:var(--bg);color:var(--text);max-width:480px;margin:0 auto;
+      min-height:100vh;overflow-x:hidden}
+
+    /* ── LOGIN ── */
+    #login-screen{position:fixed;inset:0;background:var(--green);
+      display:flex;flex-direction:column;align-items:center;justify-content:center;
+      z-index:1000;padding:2rem}
+    .login-icon{font-size:3.5rem;margin-bottom:.75rem}
+    .login-title{color:#fff;font-size:1.8rem;font-weight:800;margin-bottom:.25rem;text-align:center}
+    .login-sub{color:rgba(255,255,255,.65);font-size:.85rem;margin-bottom:2.5rem;text-align:center}
+    .login-box{background:#fff;border-radius:18px;padding:1.5rem;width:100%;max-width:320px}
+    .login-label{display:block;font-size:.7rem;color:var(--light);text-transform:uppercase;
+      letter-spacing:.08em;margin-bottom:.4rem;font-weight:600}
+    .login-input{width:100%;padding:.875rem 1rem;border:2px solid var(--border);border-radius:10px;
+      font-size:1.5rem;letter-spacing:.4em;outline:none;transition:border-color .2s;
+      font-family:monospace}
+    .login-input:focus{border-color:var(--green)}
+    .login-input.err{border-color:var(--red);animation:shake .3s}
+    @keyframes shake{0%,100%{transform:translateX(0)}25%{transform:translateX(-6px)}75%{transform:translateX(6px)}}
+    .login-error{color:var(--red);font-size:.78rem;margin-top:.4rem;
+      min-height:1rem;transition:opacity .2s}
+    .login-btn{width:100%;padding:.9rem;background:var(--green);color:#fff;border:none;
+      border-radius:10px;font-size:1rem;font-weight:700;cursor:pointer;margin-top:1rem;
+      letter-spacing:.03em;transition:background .15s}
+    .login-btn:active{background:#1B5E20}
+
+    /* ── APP SHELL ── */
+    #app{display:none;min-height:100vh}
+
+    /* ── HEADER ── */
+    .header{background:var(--green);color:#fff;padding:.875rem 1rem 0;
+      position:sticky;top:0;z-index:100;box-shadow:0 2px 8px rgba(0,0,0,.2)}
+    .header-top{display:flex;justify-content:space-between;align-items:center;margin-bottom:.75rem}
+    .header-title{font-size:1.15rem;font-weight:800;letter-spacing:-.01em}
+    .hdr-btns{display:flex;gap:.4rem}
+    .icon-btn{background:rgba(255,255,255,.18);border:none;color:#fff;
+      width:36px;height:36px;border-radius:8px;cursor:pointer;
+      font-size:1rem;display:flex;align-items:center;justify-content:center;
+      transition:background .15s}
+    .icon-btn:active{background:rgba(255,255,255,.35)}
+
+    /* ── STORE TABS ── */
+    .store-tabs{display:flex;gap:.15rem}
+    .store-tab{flex:1;padding:.5rem .25rem .625rem;background:transparent;border:none;
+      color:rgba(255,255,255,.6);font-size:.72rem;font-weight:700;cursor:pointer;
+      border-bottom:2.5px solid transparent;transition:all .2s;text-align:center;
+      letter-spacing:.01em;text-transform:uppercase}
+    .store-tab.active{color:#fff;border-bottom-color:#fff}
+
+    /* ── NAV TABS ── */
+    .nav-tabs{display:flex;background:#fff;border-bottom:1px solid var(--border);
+      padding:0 .75rem;position:sticky;top:82px;z-index:90}
+    .nav-tab{flex:1;padding:.7rem 0;background:none;border:none;
+      border-bottom:2.5px solid transparent;font-size:.85rem;font-weight:600;
+      color:var(--light);cursor:pointer;text-align:center;transition:all .2s}
+    .nav-tab.active{color:var(--green);border-bottom-color:var(--green)}
+
+    /* ── CONTENT ── */
+    .content{padding:.75rem .75rem 6rem}
+
+    /* ── AISLE SECTION ── */
+    .aisle-section{margin-bottom:.875rem}
+    .aisle-header{display:flex;align-items:center;gap:.45rem;
+      padding:.4rem .25rem;font-size:.68rem;font-weight:700;
+      color:var(--light);text-transform:uppercase;letter-spacing:.06em}
+    .aisle-badge{background:var(--green);color:#fff;font-size:.6rem;
+      padding:.1rem .4rem;border-radius:4px;font-weight:700}
+
+    /* ── ITEM LIST ── */
+    .item-list{background:#fff;border-radius:14px;overflow:hidden;
+      box-shadow:0 1px 4px rgba(0,0,0,.07)}
+    .item-row{display:flex;align-items:center;padding:.7rem .875rem;
+      border-bottom:1px solid var(--border);gap:.7rem;transition:background .12s}
+    .item-row:last-child{border-bottom:none}
+    .item-row.done{background:#FAFAFA}
+    .check-btn{width:26px;height:26px;min-width:26px;border-radius:50%;
+      border:2px solid var(--border);background:#fff;cursor:pointer;
+      display:flex;align-items:center;justify-content:center;
+      font-size:.75rem;transition:all .15s;color:transparent}
+    .check-btn.done{background:var(--green2);border-color:var(--green2);color:#fff}
+    .item-name{flex:1;font-size:.9375rem}
+    .item-row.done .item-name{color:var(--checked);text-decoration:line-through}
+    .del-btn{background:none;border:none;color:#ccc;padding:.3rem;
+      cursor:pointer;font-size:.85rem;border-radius:4px;line-height:1}
+    .del-btn:active{color:var(--red);background:#FFF0F0}
+
+    /* ── EMPTY STATE ── */
+    .empty{text-align:center;padding:3rem 1rem;color:var(--light)}
+    .empty-icon{font-size:2.75rem;margin-bottom:.875rem}
+    .empty-title{font-size:1rem;font-weight:700;margin-bottom:.4rem;color:var(--text)}
+    .empty-text{font-size:.85rem;line-height:1.5}
+
+    /* ── FAB ── */
+    .fab{position:fixed;bottom:1.5rem;right:1rem;
+      background:var(--green);color:#fff;border:none;
+      width:58px;height:58px;border-radius:50%;font-size:1.75rem;
+      cursor:pointer;box-shadow:0 4px 14px rgba(46,125,50,.45);
+      display:flex;align-items:center;justify-content:center;
+      z-index:80;transition:transform .15s}
+    .fab:active{transform:scale(.93)}
+
+    /* ── MODAL ── */
+    .overlay{position:fixed;inset:0;background:rgba(0,0,0,.5);
+      z-index:200;display:flex;align-items:flex-end;justify-content:center;padding:1rem}
+    .modal{background:#fff;border-radius:22px 22px 14px 14px;
+      width:100%;max-width:480px;padding:1.5rem;max-height:88vh;overflow-y:auto}
+    .modal-title{font-size:1.05rem;font-weight:800;margin-bottom:1.25rem}
+    .form-group{margin-bottom:1rem;position:relative}
+    .form-label{display:block;font-size:.75rem;color:var(--light);
+      margin-bottom:.35rem;font-weight:600}
+    .form-input{width:100%;padding:.75rem .875rem;border:1.5px solid var(--border);
+      border-radius:10px;font-size:.9375rem;outline:none;transition:border-color .2s}
+    .form-input:focus{border-color:var(--green)}
+    .form-select{width:100%;padding:.75rem .875rem;border:1.5px solid var(--border);
+      border-radius:10px;font-size:.9rem;outline:none;background:#fff;
+      -webkit-appearance:none;appearance:none;
+      background-image:url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='12' height='12' viewBox='0 0 24 24' fill='none' stroke='%23757575' stroke-width='2.5'%3E%3Cpolyline points='6 9 12 15 18 9'%3E%3C/polyline%3E%3C/svg%3E");
+      background-repeat:no-repeat;background-position:right .875rem center;
+      transition:border-color .2s}
+    .form-select:focus{border-color:var(--green)}
+    .toggle-row{display:flex;justify-content:space-between;align-items:center;
+      padding:.5rem 0}
+    .toggle-label{font-size:.9rem}
+    .toggle{position:relative;width:46px;height:26px;flex-shrink:0}
+    .toggle input{opacity:0;width:0;height:0}
+    .slider{position:absolute;inset:0;background:var(--border);border-radius:26px;
+      transition:.2s;cursor:pointer}
+    .slider:before{content:'';position:absolute;width:20px;height:20px;
+      background:#fff;border-radius:50%;left:3px;top:3px;transition:.2s;
+      box-shadow:0 1px 3px rgba(0,0,0,.2)}
+    .toggle input:checked+.slider{background:var(--green)}
+    .toggle input:checked+.slider:before{transform:translateX(20px)}
+    .modal-btns{display:flex;gap:.75rem;margin-top:1.25rem}
+    .btn-cancel{flex:1;padding:.8rem;background:var(--bg);border:none;
+      border-radius:10px;font-size:.9rem;cursor:pointer;font-weight:500}
+    .btn-save{flex:2;padding:.8rem;background:var(--green);color:#fff;border:none;
+      border-radius:10px;font-size:.9rem;cursor:pointer;font-weight:700}
+    .btn-save:active{background:#1B5E20}
+
+    /* ── SUGGESTIONS ── */
+    .suggestions{background:#fff;border:1.5px solid var(--green);
+      border-top:none;border-radius:0 0 10px 10px;
+      max-height:150px;overflow-y:auto;margin-top:-2px;
+      box-shadow:0 4px 8px rgba(0,0,0,.08)}
+    .sug-item{padding:.6rem .875rem;cursor:pointer;font-size:.9rem;
+      border-bottom:1px solid var(--border)}
+    .sug-item:last-child{border-bottom:none}
+    .sug-item:active{background:var(--bg)}
+    .sug-cat{font-size:.7rem;color:var(--light);margin-left:.4rem}
+
+    /* ── MASTER LIST ── */
+    .master-row{display:flex;align-items:center;padding:.7rem .875rem;
+      border-bottom:1px solid var(--border);gap:.7rem}
+    .master-row:last-child{border-bottom:none}
+    .master-info{flex:1}
+    .master-name{font-size:.9375rem}
+    .master-cat{font-size:.7rem;color:var(--light);margin-top:.1rem}
+    .add-btn{background:var(--green-pale);color:var(--green);border:none;
+      border-radius:8px;padding:.35rem .65rem;font-size:.75rem;font-weight:700;
+      cursor:pointer;white-space:nowrap}
+    .add-btn.on{background:var(--green);color:#fff}
+
+    /* ── TOAST ── */
+    .toast{position:fixed;bottom:5.5rem;left:50%;transform:translateX(-50%);
+      background:#323232;color:#fff;padding:.7rem 1.25rem;border-radius:8px;
+      font-size:.85rem;z-index:500;opacity:0;transition:opacity .25s;
+      pointer-events:none;white-space:nowrap;max-width:90vw;text-align:center}
+    .toast.show{opacity:1}
+
+    /* ── CHECKED PROGRESS BAR ── */
+    .progress-bar{height:3px;background:var(--green-pale);margin:0 .75rem .25rem;
+      border-radius:3px;overflow:hidden}
+    .progress-fill{height:100%;background:var(--green);transition:width .3s}
+  </style>
+</head>
+<body>
+
+<!-- LOGIN -->
+<div id="login-screen">
+  <div class="login-icon">🛒</div>
+  <div class="login-title">Hunter Grocery List</div>
+  <div class="login-sub">Family access required</div>
+  <div class="login-box">
+    <label class="login-label" for="pwd">Access Code</label>
+    <input type="password" id="pwd" class="login-input"
+      placeholder="••••••••••••••••••••" autocomplete="off">
+    <div class="login-error" id="login-err">&nbsp;</div>
+    <button class="login-btn" id="login-btn">Access List →</button>
+  </div>
+</div>
+
+<!-- TOAST -->
+<div class="toast" id="toast"></div>
+
+<!-- ADD ITEM MODAL -->
+<div class="overlay" id="item-modal" style="display:none" onclick="if(event.target===this)closeModal()">
+  <div class="modal">
+    <div class="modal-title" id="modal-title">Add Item</div>
+    <div class="form-group">
+      <label class="form-label">Item Name</label>
+      <input type="text" class="form-input" id="item-name"
+        placeholder="e.g. Whole milk, Chicken breast…" autocomplete="off">
+      <div class="suggestions" id="suggestions" style="display:none"></div>
+    </div>
+    <div class="form-group">
+      <label class="form-label">Category (auto-detected — tap to change)</label>
+      <select class="form-select" id="item-cat"></select>
+    </div>
+    <div class="toggle-row">
+      <span class="toggle-label">Save to Master List (recurring)</span>
+      <label class="toggle">
+        <input type="checkbox" id="item-recurring">
+        <span class="slider"></span>
+      </label>
+    </div>
+    <div class="modal-btns">
+      <button class="btn-cancel" onclick="closeModal()">Cancel</button>
+      <button class="btn-save" id="modal-save-btn">Add to List</button>
+    </div>
+  </div>
+</div>
+
+<!-- CONFIRM MODAL -->
+<div class="overlay" id="confirm-modal" style="display:none" onclick="if(event.target===this)closeConfirm()">
+  <div class="modal">
+    <div class="modal-title" id="confirm-title"></div>
+    <p style="color:var(--light);font-size:.9rem;margin-bottom:1.5rem" id="confirm-body"></p>
+    <div class="modal-btns">
+      <button class="btn-cancel" onclick="closeConfirm()">Cancel</button>
+      <button class="btn-save" id="confirm-ok">Confirm</button>
+    </div>
+  </div>
+</div>
+
+<!-- APP -->
+<div id="app">
+  <!-- Header -->
+  <div class="header">
+    <div class="header-top">
+      <div class="header-title">🛒 Hunter List</div>
+      <div class="hdr-btns">
+        <button class="icon-btn" id="reset-btn" title="Reset cart">↺</button>
+        <button class="icon-btn" onclick="logout()" title="Lock">🔒</button>
+      </div>
+    </div>
+    <div class="store-tabs">
+      <button class="store-tab active" onclick="setStore('publix')" id="tab-publix">Publix</button>
+      <button class="store-tab" onclick="setStore('walmart')" id="tab-walmart">Walmart</button>
+      <button class="store-tab" onclick="setStore('traderjoes')" id="tab-traderjoes">Trader Joe's</button>
+    </div>
+  </div>
+  <div class="progress-bar"><div class="progress-fill" id="progress-fill" style="width:0%"></div></div>
+
+  <!-- Nav Tabs -->
+  <div class="nav-tabs">
+    <button class="nav-tab active" onclick="setView('list')" id="nav-list">Shopping List</button>
+    <button class="nav-tab" onclick="setView('master')" id="nav-master">Master List</button>
+  </div>
+
+  <!-- Shopping List -->
+  <div id="view-list" class="content">
+    <div id="list-container"></div>
+  </div>
+
+  <!-- Master List -->
+  <div id="view-master" class="content" style="display:none">
+    <div id="master-container"></div>
+  </div>
+
+  <!-- FAB -->
+  <button class="fab" onclick="openAddModal()" title="Add item">+</button>
+</div>
+
+<script type="module">
+import { initializeApp }
+  from "https://www.gstatic.com/firebasejs/10.12.0/firebase-app.js";
+import { getFirestore, collection, addDoc, onSnapshot,
+  updateDoc, deleteDoc, doc, serverTimestamp }
+  from "https://www.gstatic.com/firebasejs/10.12.0/firebase-firestore.js";
+
+// ════════════════════════════════════════════════
+// 🔧 FIREBASE CONFIG — paste your values here
+// ════════════════════════════════════════════════
+const firebaseConfig = {
+  apiKey:            "YOUR_API_KEY",
+  authDomain:        "YOUR_PROJECT_ID.firebaseapp.com",
+  projectId:         "YOUR_PROJECT_ID",
+  storageBucket:     "YOUR_PROJECT_ID.appspot.com",
+  messagingSenderId: "YOUR_MESSAGING_SENDER_ID",
+  appId:             "YOUR_APP_ID"
+};
+// ════════════════════════════════════════════════
+
+const fbApp = initializeApp(firebaseConfig);
+const db    = getFirestore(fbApp);
+
+// ── PASSWORD (SHA-256 of "7") ──
+const PWD_HASH = '7902699be42c8a8e46fbbb4501726517e86b22c56a189f7625a6da49081b2451';
+async function sha256(s) {
+  const buf = await crypto.subtle.digest('SHA-256', new TextEncoder().encode(s));
+  return [...new Uint8Array(buf)].map(b=>b.toString(16).padStart(2,'0')).join('');
+}
+
+// ── STORE LAYOUTS ──
+const STORES = {
+  publix: {
+    name: 'Publix',
+    aisles: [
+      { id:'floral',   label:'Floral',                         cats:['FLORAL'] },
+      { id:'bakery',   label:'Bakery',                         cats:['BAKERY'] },
+      { id:'deli',     label:'Deli',                           cats:['DELI'] },
+      { id:'produce',  label:'Produce',                        cats:['PRODUCE'] },
+      { id:'a1',       label:'Aisle 1 — Cereals & Coffee',     cats:['CEREALS_COFFEE'] },
+      { id:'a3',       label:'Aisle 3 — Canned Foods & Soups', cats:['CANNED_SOUPS'] },
+      { id:'a4a',      label:'Aisle 4 — Baking, Spices & Condiments', cats:['BAKING_SPICES_CONDIMENTS'] },
+      { id:'a4b',      label:'Aisle 4 — Oils & Dressings',    cats:['OILS_DRESSINGS'] },
+      { id:'a5',       label:'Aisle 5 — Pasta, Rice & Beans', cats:['PASTA_RICE_BEANS'] },
+      { id:'a6',       label:'Aisle 6 — Beverages',           cats:['BEVERAGES'] },
+      { id:'a7',       label:'Aisle 7 — Crackers, Nuts & Snacks', cats:['SNACKS_CRACKERS_CANDY'] },
+      { id:'a8',       label:'Aisle 8 — Chips',               cats:['CHIPS'] },
+      { id:'a9',       label:'Aisles 9–10 — Frozen Foods',    cats:['FROZEN'] },
+      { id:'a11',      label:'Aisles 11–12 — Household',      cats:['HOUSEHOLD'] },
+      { id:'a13',      label:'Aisle 13 — Laundry & Cleaning', cats:['LAUNDRY_CLEANING'] },
+      { id:'a15',      label:'Aisle 15 — Toiletries',         cats:['TOILETRIES_PERSONAL_CARE'] },
+      { id:'wine',     label:'Wine & Beer',                   cats:['WINE_BEER'] },
+      { id:'seafood',  label:'Seafood',                       cats:['SEAFOOD'] },
+      { id:'meat',     label:'Meat',                          cats:['MEAT'] },
+      { id:'dairy',    label:'Aisle 16 — Dairy, Eggs & Cheese', cats:['DAIRY_EGGS_CHEESE'] },
+      { id:'pharmacy', label:'Pharmacy & Medicine',           cats:['PHARMACY_MEDICINE'] },
+    ]
+  },
+  walmart: {
+    name: 'Walmart',
+    aisles: [
+      { id:'produce',   label:'Produce & Floral',         cats:['PRODUCE','FLORAL'] },
+      { id:'bakery',    label:'Bakery & Deli',            cats:['BAKERY','DELI'] },
+      { id:'meat',      label:'Meat & Seafood',           cats:['MEAT','SEAFOOD'] },
+      { id:'dairy',     label:'Dairy & Eggs',             cats:['DAIRY_EGGS_CHEESE'] },
+      { id:'frozen',    label:'Frozen Foods',             cats:['FROZEN'] },
+      { id:'grocery',   label:'Grocery — Dry Goods',     cats:['CEREALS_COFFEE','CANNED_SOUPS','PASTA_RICE_BEANS','BAKING_SPICES_CONDIMENTS','OILS_DRESSINGS'] },
+      { id:'snacks',    label:'Snacks & Beverages',       cats:['SNACKS_CRACKERS_CANDY','CHIPS','BEVERAGES'] },
+      { id:'alcohol',   label:'Adult Beverages',          cats:['WINE_BEER'] },
+      { id:'household', label:'Household & Cleaning',     cats:['HOUSEHOLD','LAUNDRY_CLEANING'] },
+      { id:'health',    label:'Health & Wellness',        cats:['PHARMACY_MEDICINE','TOILETRIES_PERSONAL_CARE'] },
+    ]
+  },
+  traderjoes: {
+    name:"Trader Joe's",
+    aisles: [
+      { id:'produce',   label:'Produce',                  cats:['PRODUCE','FLORAL'] },
+      { id:'bakery',    label:'Bakery',                   cats:['BAKERY'] },
+      { id:'dairy',     label:'Dairy & Eggs',             cats:['DAIRY_EGGS_CHEESE'] },
+      { id:'meat',      label:'Meat & Seafood',           cats:['MEAT','SEAFOOD','DELI'] },
+      { id:'frozen',    label:'Frozen',                   cats:['FROZEN'] },
+      { id:'pantry',    label:'Pantry',                   cats:['CEREALS_COFFEE','CANNED_SOUPS','BAKING_SPICES_CONDIMENTS','PASTA_RICE_BEANS','OILS_DRESSINGS'] },
+      { id:'snacks',    label:'Snacks & Candy',           cats:['SNACKS_CRACKERS_CANDY','CHIPS'] },
+      { id:'beverages', label:'Beverages',                cats:['BEVERAGES'] },
+      { id:'wine',      label:'Wine & Beer',              cats:['WINE_BEER'] },
+      { id:'home',      label:'Household & Body Care',    cats:['HOUSEHOLD','LAUNDRY_CLEANING','TOILETRIES_PERSONAL_CARE','PHARMACY_MEDICINE'] },
+    ]
+  }
+};
+
+// ── CATEGORIES ──
+const CATS = {
+  PRODUCE:'Produce', BAKERY:'Bakery', DELI:'Deli', MEAT:'Meat', SEAFOOD:'Seafood',
+  DAIRY_EGGS_CHEESE:'Dairy, Eggs & Cheese', FROZEN:'Frozen',
+  CEREALS_COFFEE:'Cereals & Coffee', CANNED_SOUPS:'Canned Foods & Soups',
+  BAKING_SPICES_CONDIMENTS:'Baking, Spices & Condiments',
+  PASTA_RICE_BEANS:'Pasta, Rice & Beans', BEVERAGES:'Beverages',
+  SNACKS_CRACKERS_CANDY:'Snacks, Crackers & Candy', CHIPS:'Chips',
+  HOUSEHOLD:'Household Items', LAUNDRY_CLEANING:'Laundry & Cleaning',
+  TOILETRIES_PERSONAL_CARE:'Toiletries & Personal Care',
+  WINE_BEER:'Wine & Beer', PHARMACY_MEDICINE:'Pharmacy & Medicine',
+  OILS_DRESSINGS:'Oils & Dressings', FLORAL:'Floral',
+};
+
+const KW = {
+  PRODUCE:['apple','apples','banana','bananas','orange','oranges','grape','grapes','lettuce',
+    'spinach','kale','broccoli','carrot','carrots','celery','tomato','tomatoes','onion','onions',
+    'garlic','potato','potatoes','sweet potato','sweet potatoes','pepper','peppers','cucumber',
+    'zucchini','squash','strawberry','strawberries','blueberry','blueberries','raspberry',
+    'raspberries','lemon','lemons','lime','limes','avocado','avocados','mango','pineapple',
+    'watermelon','cantaloupe','corn','mushroom','mushrooms','asparagus','green bean','green beans',
+    'peas','cauliflower','cabbage','herbs','cilantro','parsley','basil','mint','ginger','salad',
+    'arugula','romaine','iceberg','mixed greens','cherry tomatoes','produce','peach','peaches',
+    'plum','melon','berries','blackberries','eggplant','beet','beets','artichoke','jalapeno',
+    'jalapeño','scallion','leek','turnip','radish','bok choy','chard','snap peas','edamame fresh',
+    'brussel sprouts','brussels sprouts'],
+  BAKERY:['bread','bagel','bagels','muffin','muffins','croissant','croissants','cake','cupcake',
+    'cupcakes','donut','donuts','doughnut','doughnuts','baguette','roll','rolls','sourdough',
+    'pita','naan','birthday cake','pie','pastry','pastries','biscuits','english muffin',
+    'english muffins','brioche','focaccia','french bread','ciabatta','whole wheat bread',
+    'white bread','multigrain bread','sandwich bread','hoagie roll','sub roll','hamburger buns',
+    'hot dog buns','dinner rolls'],
+  DELI:['ham','turkey breast','roast beef','salami','pepperoni','bologna','pastrami',
+    'lunch meat','lunchmeat','cold cuts','sliced turkey','sliced ham','rotisserie chicken',
+    'rotisserie','prosciutto','capicola','mortadella','liverwurst'],
+  MEAT:['chicken','beef','pork','steak','ground beef','ground turkey','ground chicken',
+    'chicken breast','chicken thigh','drumstick','wings','chicken wings','ribs','bacon',
+    'sausage','hot dog','hot dogs','bratwurst','brats','lamb','veal','pork chop','pork chops',
+    'tenderloin','sirloin','ribeye','chuck','brisket','ground pork','italian sausage',
+    'breakfast sausage','turkey','whole turkey','pork belly','flank steak','skirt steak',
+    't-bone','new york strip','filet mignon','deli meat','smoked sausage','kielbasa',
+    'chorizo','andouille'],
+  SEAFOOD:['fish','salmon','tuna','tilapia','cod','halibut','shrimp','crab','lobster',
+    'scallops','mussels','clams','oysters','swordfish','trout','catfish','flounder',
+    'mahi','sea bass','snapper','anchovies','sardines','calamari','squid','crawfish'],
+  DAIRY_EGGS_CHEESE:['milk','butter','egg','eggs','cheese','yogurt','cream','sour cream',
+    'cream cheese','cottage cheese','heavy cream','half and half','whipping cream','cheddar',
+    'mozzarella','parmesan','feta','brie','gouda','monterey jack','colby','american cheese',
+    'string cheese','almond milk','oat milk','soy milk','skim milk','whole milk','2% milk',
+    'greek yogurt','kefir','whipped cream','cool whip','ricotta','mascarpone','havarti',
+    'gruyere','pecorino','asiago','provolone','lactaid','half & half','heavy whipping cream'],
+  FROZEN:['frozen','ice cream','gelato','sherbet','sorbet','popsicle','popsicles',
+    'frozen pizza','pizza rolls','tater tots','french fries','frozen fries',
+    'edamame','frozen peas','frozen corn','frozen broccoli','frozen spinach',
+    'waffles','frozen waffles','frozen pancakes','ice cream sandwich',
+    'lean cuisine','stouffers','amys frozen','frozen meal','frozen dinner',
+    'frozen fruit','frozen berries','frozen mango','birds eye','green giant frozen'],
+  CEREALS_COFFEE:['cereal','granola','oatmeal','grits','cream of wheat','corn flakes',
+    'frosted flakes','cheerios','honey nut cheerios','special k','life cereal',
+    'coffee','k-cup','k-cups','espresso','coffee beans','ground coffee','instant coffee',
+    'cold brew','tea','green tea','black tea','herbal tea','chamomile','earl grey','chai',
+    'matcha','hot chocolate','cocoa mix'],
+  CANNED_SOUPS:['soup','chicken soup','tomato soup','chicken noodle','minestrone',
+    'chicken broth','vegetable broth','beef broth','broth','stock','chicken stock',
+    'beef stock','tomato sauce','tomato paste','diced tomatoes','crushed tomatoes',
+    'canned beans','canned corn','canned peas','canned tuna','canned salmon',
+    'canned chicken','canned fruit','applesauce','pumpkin puree','coconut milk canned',
+    'artichoke hearts','rotel','green chiles','olives','capers','bamboo shoots',
+    'water chestnuts','bean sprouts','mandarin oranges','canned pineapple'],
+  BAKING_SPICES_CONDIMENTS:['flour','sugar','brown sugar','powdered sugar','baking soda',
+    'baking powder','yeast','vanilla extract','chocolate chips','cocoa powder',
+    'salt','black pepper','garlic powder','onion powder','cumin','oregano',
+    'rosemary','thyme','paprika','cayenne','cinnamon','nutmeg','turmeric','chili powder',
+    'spice','spices','seasoning','ketchup','mustard','dijon mustard','mayonnaise','mayo',
+    'relish','hot sauce','sriracha','soy sauce','worcestershire','bbq sauce','teriyaki sauce',
+    'ranch dressing','blue cheese dressing','caesar dressing','italian dressing',
+    'salsa','pico de gallo','guacamole','hummus','pesto','marinara','pasta sauce',
+    'alfredo sauce','taco sauce','enchilada sauce','honey','maple syrup','agave','molasses',
+    'jam','jelly','peanut butter','almond butter','nutella','tahini','fish sauce',
+    'oyster sauce','hoisin sauce','miso','everything bagel seasoning','old bay','lemon pepper',
+    'red pepper flakes','bay leaves','dill','tarragon','garam masala','curry powder',
+    'italian seasoning','steak seasoning','taco seasoning','ranch seasoning'],
+  PASTA_RICE_BEANS:['pasta','spaghetti','penne','fettuccine','linguine','lasagna','rigatoni',
+    'rotini','orzo','farfalle','angel hair','bucatini','rice','white rice','brown rice',
+    'jasmine rice','basmati rice','quinoa','couscous','farro','bulgur','barley',
+    'black beans','kidney beans','pinto beans','chickpeas','garbanzo beans','lentils',
+    'split peas','navy beans','cannellini','great northern beans','lima beans',
+    'ramen','noodles','mac and cheese','macaroni','egg noodles','rice noodles',
+    'udon','soba','polenta','grits uncooked'],
+  BEVERAGES:['water','sparkling water','seltzer water','club soda','soda','diet soda',
+    'coke','pepsi','sprite','ginger ale','diet coke','coca-cola','mountain dew',
+    'dr pepper','7up','root beer','gatorade','powerade','orange juice','apple juice',
+    'grape juice','cranberry juice','lemonade','vitamin water','energy drink',
+    'red bull','monster','kombucha','coconut water','sports drink','iced tea',
+    'sweet tea','la croix','bubly','spindrift','san pellegrino','perrier',
+    'liquid iv','protein shake','ensure','boost','v8','juice boxes','capri sun'],
+  SNACKS_CRACKERS_CANDY:['crackers','nuts','almonds','cashews','peanuts','walnuts',
+    'pecans','pistachios','macadamia','mixed nuts','trail mix','popcorn','pretzels',
+    'rice cakes','granola bar','protein bar','kind bar','cliff bar','larabar',
+    'nutri-grain','candy','chocolate','m&ms','snickers','kitkat','reeses',
+    'skittles','starburst','gummies','gummy bears','licorice','twizzlers',
+    'caramel','hard candy','cheez-its','ritz','triscuit','wheat thins','goldfish',
+    'sun chips','animal crackers','graham crackers','oreos','chips ahoy','fig newtons',
+    'nutter butter','sesame sticks','sunflower seeds','pumpkin seeds','jerky','beef jerky',
+    'pork rinds','popcorn chips','boom chicka pop','skinny pop'],
+  CHIPS:['chips','potato chips','lays','doritos','fritos','cheetos','pringles',
+    'tortilla chips','veggie chips','kettle chips','funyuns','bugles',
+    'corn chips','ruffles','cape cod chips','tostitos','mission chips',
+    'barbecue chips','bbq chips','salt and vinegar chips','sour cream and onion'],
+  HOUSEHOLD:['paper towels','toilet paper','tissues','kleenex','napkins','trash bags',
+    'ziploc','aluminum foil','saran wrap','plastic wrap','parchment paper',
+    'coffee filters','candles','light bulbs','batteries','paper plates',
+    'plastic cups','solo cups','disposable plates','storage bags','wax paper',
+    'freezer bags','cling wrap','butcher paper'],
+  LAUNDRY_CLEANING:['laundry detergent','dish soap','dishwasher pods','tide','downy','bounce',
+    'dryer sheets','bleach','fabric softener','stain remover','spray cleaner',
+    'windex','lysol','clorox','sponges','scrub brush','all-purpose cleaner',
+    'bathroom cleaner','toilet bowl cleaner','febreze','air freshener','mop',
+    'broom','dustpan','duster','rubber gloves','scrubbing bubbles','comet',
+    'ajax','dawn dish soap','cascade','finish pods','arm and hammer','oxy clean',
+    'shout','resolve','mr clean','pine-sol'],
+  TOILETRIES_PERSONAL_CARE:['shampoo','conditioner','body wash','soap','bar soap','hand soap',
+    'toothpaste','toothbrush','dental floss','mouthwash','deodorant','antiperspirant',
+    'lotion','body lotion','face wash','moisturizer','sunscreen','lip balm','chapstick',
+    'razor','razors','shaving cream','aftershave','cotton balls','q-tips','cotton swabs',
+    'feminine care','tampons','pads','pantyliners','hair spray','hair gel','dry shampoo',
+    'face mask','eye cream','toner','serum','retinol','nail polish',
+    'nail polish remover','tweezers','contact solution','eye drops','saline'],
+  WINE_BEER:['wine','red wine','white wine','rose wine','rosé','champagne','prosecco','cava',
+    'pinot noir','cabernet','merlot','chardonnay','sauvignon blanc','pinot grigio',
+    'riesling','moscato','zinfandel','beer','ipa','lager','ale','stout',
+    'porter','pilsner','hard cider','white claw','truly','high noon','hard seltzer',
+    'vodka','whiskey','bourbon','scotch','rum','tequila','gin','spirits','liquor',
+    'baileys','kahlua','brandy','sake'],
+  PHARMACY_MEDICINE:['medicine','medication','vitamins','vitamin','supplement','aspirin',
+    'tylenol','advil','ibuprofen','acetaminophen','naproxen','cold medicine',
+    'cough syrup','cough drops','nyquil','dayquil','mucinex','robitussin','antacid',
+    'tums','pepto bismol','rolaids','allergy medicine','zyrtec','claritin',
+    'benadryl','allegra','flonase','band-aids','bandages','gauze','first aid',
+    'neosporin','hydrogen peroxide','thermometer','fish oil','omega 3','probiotics',
+    'melatonin','zinc','vitamin c','vitamin d','iron','calcium','magnesium',
+    'multivitamin','protein powder','collagen'],
+  OILS_DRESSINGS:['olive oil','vegetable oil','canola oil','coconut oil','avocado oil',
+    'sesame oil','cooking oil','salad dressing','balsamic vinegar','apple cider vinegar',
+    'red wine vinegar','white wine vinegar','rice vinegar','white vinegar','vinegar',
+    'cooking spray','pam spray'],
+  FLORAL:['flowers','bouquet','plant','potted plant','succulent','floral','orchid',
+    'roses','tulips','sunflowers','lilies','daisies'],
+};
+
+function detectCat(name) {
+  const s = name.toLowerCase().trim();
+  if (s.length < 2) return 'PRODUCE';
+  // Exact match
+  for (const [c,kws] of Object.entries(KW)) { if (kws.includes(s)) return c; }
+  // Name contains keyword
+  for (const [c,kws] of Object.entries(KW)) { for (const k of kws) { if (s.includes(k)) return c; } }
+  // Keyword starts with name (partial typing)
+  if (s.length >= 3) {
+    for (const [c,kws] of Object.entries(KW)) {
+      for (const k of kws) { if (k.startsWith(s)) return c; }
+    }
+  }
+  return 'CANNED_SOUPS';
+}
+
+// ── STATE ──
+let store  = 'publix';
+let view   = 'list';
+let items  = [];
+let editId = null;
+let unsub  = null;
+
+// ── AUTH ──
+async function checkLogin() {
+  const val = document.getElementById('pwd').value;
+  const h   = await sha256(val);
+  if (h === PWD_HASH) {
+    localStorage.setItem('hgl','1');
+    document.getElementById('login-screen').style.display = 'none';
+    document.getElementById('app').style.display = 'block';
+    startApp();
+  } else {
+    const el  = document.getElementById('pwd');
+    const err = document.getElementById('login-err');
+    el.classList.add('err');
+    err.textContent = 'Incorrect code — try again.';
+    el.value = '';
+    setTimeout(()=>{ el.classList.remove('err'); err.textContent='\u00a0'; }, 2200);
+  }
+}
+window.logout = function() {
+  localStorage.removeItem('hgl');
+  if (unsub) unsub();
+  document.getElementById('login-screen').style.display = 'flex';
+  document.getElementById('app').style.display = 'none';
+};
+document.getElementById('login-btn').addEventListener('click', checkLogin);
+document.getElementById('pwd').addEventListener('keydown', e => { if(e.key==='Enter') checkLogin(); });
+if (localStorage.getItem('hgl')==='1') {
+  document.getElementById('login-screen').style.display = 'none';
+  document.getElementById('app').style.display = 'block';
+  setTimeout(startApp, 0);
+}
+
+// ── FIREBASE LISTENER ──
+function startApp() {
+  if (unsub) unsub();
+  unsub = onSnapshot(collection(db,'items'), snap => {
+    items = snap.docs.map(d=>({id:d.id,...d.data()}));
+    render();
+  });
+}
+
+// ── NAV ──
+window.setStore = function(s) {
+  store = s;
+  document.querySelectorAll('.store-tab').forEach(t=>t.classList.remove('active'));
+  document.getElementById('tab-'+s).classList.add('active');
+  render();
+};
+window.setView = function(v) {
+  view = v;
+  document.querySelectorAll('.nav-tab').forEach(t=>t.classList.remove('active'));
+  document.getElementById('nav-'+v).classList.add('active');
+  document.getElementById('view-list').style.display   = v==='list'?'block':'none';
+  document.getElementById('view-master').style.display = v==='master'?'block':'none';
+};
+
+// ── RENDER ──
+function render() { renderList(); renderMaster(); }
+
+function renderList() {
+  const s   = STORES[store];
+  const act = items.filter(i=>i.active);
+  const el  = document.getElementById('list-container');
+  const done= act.filter(i=>i.checked?.[store]).length;
+  const pct = act.length ? Math.round(done/act.length*100) : 0;
+  document.getElementById('progress-fill').style.width = pct+'%';
+
+  if (!act.length) {
+    el.innerHTML = `<div class="empty">
+      <div class="empty-icon">🛒</div>
+      <div class="empty-title">List is empty</div>
+      <div class="empty-text">Tap + to add items, or use the Master List to quickly add regulars.</div>
+    </div>`; return;
+  }
+
+  let html='', anyShown=false;
+  const allCats = s.aisles.flatMap(a=>a.cats);
+
+  s.aisles.forEach(aisle => {
+    const ai = act.filter(i=>aisle.cats.includes(i.category));
+    if (!ai.length) return;
+    anyShown = true;
+    const sorted = [...ai.filter(i=>!i.checked?.[store]), ...ai.filter(i=>i.checked?.[store])];
+    html += `<div class="aisle-section">
+      <div class="aisle-header"><span class="aisle-badge">${s.name}</span>${esc(aisle.label)}</div>
+      <div class="item-list">`;
+    sorted.forEach(item => {
+      const c = item.checked?.[store]||false;
+      html += `<div class="item-row${c?' done':''}">
+        <button class="check-btn${c?' done':''}" onclick="toggle('${item.id}')">${c?'✓':''}</button>
+        <span class="item-name">${esc(item.name)}</span>
+        <button class="del-btn" onclick="del('${item.id}')">✕</button>
+      </div>`;
+    });
+    html += '</div></div>';
+  });
+
+  // Uncategorized
+  const unk = act.filter(i=>!allCats.includes(i.category));
+  if (unk.length) {
+    anyShown = true;
+    html += `<div class="aisle-section">
+      <div class="aisle-header">Other</div>
+      <div class="item-list">`;
+    unk.forEach(item => {
+      const c = item.checked?.[store]||false;
+      html += `<div class="item-row${c?' done':''}">
+        <button class="check-btn${c?' done':''}" onclick="toggle('${item.id}')">${c?'✓':''}</button>
+        <span class="item-name">${esc(item.name)}</span>
+        <span style="font-size:.7rem;color:var(--light);margin-right:.25rem">${CATS[item.category]||''}</span>
+        <button class="del-btn" onclick="del('${item.id}')">✕</button>
+      </div>`;
+    });
+    html += '</div></div>';
+  }
+
+  if (!anyShown) html = `<div class="empty">
+    <div class="empty-icon">✅</div>
+    <div class="empty-title">All done at ${s.name}!</div>
+    <div class="empty-text">Tap ↺ to reset for the next trip.</div>
+  </div>`;
+
+  el.innerHTML = html;
+}
+
+function renderMaster() {
+  const ms = items.filter(i=>i.recurring);
+  const el = document.getElementById('master-container');
+  if (!ms.length) {
+    el.innerHTML = `<div class="empty">
+      <div class="empty-icon">📋</div>
+      <div class="empty-title">No recurring items yet</div>
+      <div class="empty-text">When adding items, turn on "Save to Master List" to store them here for quick re-adding.</div>
+    </div>`; return;
+  }
+  const sorted = [...ms].sort((a,b)=>a.name.localeCompare(b.name));
+  let html = '<div class="item-list">';
+  sorted.forEach(item => {
+    const on = item.active;
+    html += `<div class="master-row">
+      <div class="master-info">
+        <div class="master-name">${esc(item.name)}</div>
+        <div class="master-cat">${CATS[item.category]||item.category}</div>
+      </div>
+      <button class="add-btn${on?' on':''}" onclick="toggleActive('${item.id}')">${on?'✓ On list':'+ Add'}</button>
+      <button class="del-btn" onclick="del('${item.id}')">✕</button>
+    </div>`;
+  });
+  html += '</div>';
+  el.innerHTML = html;
+}
+
+// ── ITEM ACTIONS ──
+window.toggle = async function(id) {
+  const it = items.find(i=>i.id===id); if(!it) return;
+  const ch = {...(it.checked||{})};
+  ch[store] = !ch[store];
+  await updateDoc(doc(db,'items',id),{checked:ch});
+};
+window.toggleActive = async function(id) {
+  const it = items.find(i=>i.id===id); if(!it) return;
+  await updateDoc(doc(db,'items',id),{active:!it.active});
+  toast(it.active?`${it.name} removed from list`:`${it.name} added!`);
+};
+window.del = async function(id) {
+  const it = items.find(i=>i.id===id); if(!it) return;
+  await deleteDoc(doc(db,'items',id));
+  toast(`${it.name} removed`);
+};
+
+// ── RESET CART ──
+document.getElementById('reset-btn').addEventListener('click', () => {
+  const s = STORES[store];
+  document.getElementById('confirm-title').textContent = `Reset ${s.name} cart?`;
+  document.getElementById('confirm-body').textContent =
+    `All checked items for ${s.name} will be unchecked. Items stay on your list.`;
+  document.getElementById('confirm-ok').onclick = async () => {
+    closeConfirm();
+    const ups = items.filter(i=>i.checked?.[store]).map(i=>{
+      const ch={...i.checked}; ch[store]=false;
+      return updateDoc(doc(db,'items',i.id),{checked:ch});
+    });
+    await Promise.all(ups);
+    toast('Cart reset!');
+  };
+  document.getElementById('confirm-modal').style.display='flex';
+});
+window.closeConfirm = () => document.getElementById('confirm-modal').style.display='none';
+
+// ── ADD MODAL ──
+function buildCatOptions(sel) {
+  return Object.entries(CATS)
+    .map(([k,v])=>`<option value="${k}"${k===sel?' selected':''}>${v}</option>`).join('');
+}
+window.openAddModal = function() {
+  editId = null;
+  document.getElementById('modal-title').textContent = 'Add Item';
+  document.getElementById('item-name').value = '';
+  document.getElementById('item-cat').innerHTML = buildCatOptions('PRODUCE');
+  document.getElementById('item-recurring').checked = false;
+  document.getElementById('modal-save-btn').textContent = 'Add to List';
+  document.getElementById('suggestions').style.display='none';
+  document.getElementById('item-modal').style.display='flex';
+  setTimeout(()=>document.getElementById('item-name').focus(),150);
+};
+window.closeModal = function() {
+  document.getElementById('item-modal').style.display='none';
+  document.getElementById('suggestions').style.display='none';
+};
+
+document.getElementById('item-name').addEventListener('input', function() {
+  const v = this.value.trim();
+  if (v.length > 1) {
+    document.getElementById('item-cat').innerHTML = buildCatOptions(detectCat(v));
+  }
+  // Suggestions from master list
+  if (v.length > 1) {
+    const matches = items.filter(i=>
+      i.recurring && !i.active && i.name.toLowerCase().includes(v.toLowerCase())
+    ).slice(0,5);
+    if (matches.length) {
+      const sg = document.getElementById('suggestions');
+      sg.innerHTML = matches.map(m=>
+        `<div class="sug-item" onclick="quickAdd('${m.id}')">
+          ${esc(m.name)}<span class="sug-cat">${CATS[m.category]||''}</span>
+        </div>`).join('');
+      sg.style.display='block';
+    } else {
+      document.getElementById('suggestions').style.display='none';
+    }
+  } else {
+    document.getElementById('suggestions').style.display='none';
+  }
+});
+
+window.quickAdd = async function(id) {
+  await updateDoc(doc(db,'items',id),{active:true});
+  closeModal();
+  toast('Added to list!');
+};
+
+document.getElementById('modal-save-btn').addEventListener('click', saveItem);
+document.getElementById('item-name').addEventListener('keydown', e=>{ if(e.key==='Enter') saveItem(); });
+
+async function saveItem() {
+  const name = document.getElementById('item-name').value.trim();
+  if (!name) return;
+  const cat  = document.getElementById('item-cat').value;
+  const rec  = document.getElementById('item-recurring').checked;
+  if (editId) {
+    await updateDoc(doc(db,'items',editId),{name,category:cat,recurring:rec});
+    toast('Updated!');
+  } else {
+    // Check for existing recurring item with same name (case-insensitive)
+    const dup = items.find(i=>i.recurring && i.name.toLowerCase()===name.toLowerCase());
+    if (dup) {
+      await updateDoc(doc(db,'items',dup.id),{active:true});
+      toast(`${dup.name} added from master list!`);
+    } else {
+      await addDoc(collection(db,'items'),{
+        name, category:cat, recurring:rec, active:true,
+        checked:{publix:false,walmart:false,traderjoes:false},
+        addedAt:serverTimestamp()
+      });
+      toast(`${name} added!`);
+    }
+  }
+  closeModal();
+}
+
+// ── TOAST ──
+let toastTimer;
+function toast(msg) {
+  const el=document.getElementById('toast');
+  el.textContent=msg; el.classList.add('show');
+  clearTimeout(toastTimer);
+  toastTimer=setTimeout(()=>el.classList.remove('show'),2200);
+}
+
+// ── HELPER ──
+function esc(s){ return String(s).replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;').replace(/"/g,'&quot;'); }
+
+</script>
+</body>
+</html>
