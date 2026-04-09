@@ -1,0 +1,15 @@
+{
+  "name": "Hunter Grocery List",
+  "short_name": "Hunter List",
+  "icons": [
+    {
+      "src": "apple-touch-icon.png",
+      "sizes": "180x180",
+      "type": "image/png"
+    }
+  ],
+  "start_url": ".",
+  "display": "standalone",
+  "background_color": "#1B4332",
+  "theme_color": "#1B4332"
+}
