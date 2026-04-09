@@ -887,6 +887,20 @@
       font-size: .875rem; color: var(--text);
     }
     .recipe-ing-item:last-child { border-bottom: none; }
+    .recipe-instructions {
+      margin-bottom: 1rem;
+    }
+    .recipe-instructions-title {
+      font-size: .72rem; font-weight: 700; color: var(--light);
+      text-transform: uppercase; letter-spacing: .08em;
+      margin-bottom: .5rem;
+    }
+    .recipe-instructions-body {
+      background: var(--cream); border-radius: 12px;
+      padding: .75rem 1rem;
+      font-size: .875rem; color: var(--text);
+      line-height: 1.6; white-space: pre-wrap;
+    }
     .recipe-ing-qty {
       font-size: .72rem; color: var(--light);
       min-width: 56px; text-align: right; flex-shrink: 0;
@@ -1414,6 +1428,7 @@
     </div>
     <div style="font-size:.75rem;color:var(--light);margin-bottom:1rem" id="vr-meta"></div>
     <div id="vr-ingredients"></div>
+    <div id="vr-instructions"></div>
     <div class="vr-action-row">
       <button class="btn-cancel" onclick="closeViewRecipe()">Close</button>
       <button class="btn-save" style="flex:2" onclick="addRecipeToGroceryList()" id="vr-add-btn">Add to List</button>
@@ -2106,6 +2121,7 @@ function esc(s){ return String(s).replace(/&/g,'&amp;').replace(/</g,'&lt;').rep
 // ════════════════════════════════════════════════
 let recipeTab = 'text';
 let extractedIngredients = [];
+let extractedInstructions = '';
 
 function showRecipeStep(n) {
   document.querySelectorAll('.recipe-step').forEach((s,i)=>{
@@ -2228,11 +2244,11 @@ window.extractIngredients = async function() {
       },
       body: JSON.stringify({
         model: 'claude-haiku-4-5-20251001',
-        max_tokens: 1024,
+        max_tokens: 2048,
         messages: [{
           role: 'user',
           content: recipeImportMode === 'library'
-            ? `Extract the ingredients from this recipe with quantities. Return a JSON array where each item has "name" (clean ingredient, e.g. "chicken breast"), "qty" (quantity + unit string, e.g. "2 lbs" or "4 cloves" — empty string if not specified), and "category" (one of: PRODUCE,BAKERY,DELI,MEAT,SEAFOOD,DAIRY_EGGS_CHEESE,FROZEN,CEREALS_COFFEE,CANNED_SOUPS,BAKING_SPICES_CONDIMENTS,PASTA_RICE_BEANS,BEVERAGES,SNACKS_CRACKERS_CANDY,CHIPS,HOUSEHOLD,LAUNDRY_CLEANING,TOILETRIES_PERSONAL_CARE,WINE_BEER,PHARMACY_MEDICINE,OILS_DRESSINGS,FLORAL). Format: [{"name":"chicken breast","qty":"2 lbs","category":"MEAT"},...]. Return [] if none found.\n\nRecipe:\n${inputText}`
+            ? `Extract the ingredients and cooking instructions from this recipe. Return a JSON object with two fields:\n- "ingredients": array of objects, each with "name" (clean ingredient), "qty" (quantity+unit string, empty if not specified), and "category" (one of: PRODUCE,BAKERY,DELI,MEAT,SEAFOOD,DAIRY_EGGS_CHEESE,FROZEN,CEREALS_COFFEE,CANNED_SOUPS,BAKING_SPICES_CONDIMENTS,PASTA_RICE_BEANS,BEVERAGES,SNACKS_CRACKERS_CANDY,CHIPS,HOUSEHOLD,LAUNDRY_CLEANING,TOILETRIES_PERSONAL_CARE,WINE_BEER,PHARMACY_MEDICINE,OILS_DRESSINGS,FLORAL)\n- "instructions": the cooking steps as a plain numbered string (e.g. "1. Preheat oven...\\n2. Mix..."), or empty string if not found\n\nFormat: {"ingredients":[{"name":"chicken breast","qty":"2 lbs","category":"MEAT"}],"instructions":"1. ...\\n2. ..."}\n\nRecipe:\n${inputText}`
             : `Extract the grocery ingredients from this recipe. Return ONLY a JSON array of clean ingredient names — no quantities or prep instructions. Format: ["ingredient1","ingredient2",...]. Return [] if none found.\n\nRecipe:\n${inputText}`
         }]
       })
@@ -2245,10 +2261,24 @@ window.extractIngredients = async function() {
 
     const data = await resp.json();
     const text = data.content?.[0]?.text || '[]';
-    const jsonMatch = text.match(/\[[\s\S]*?\]/);
     let names = [];
-    if (jsonMatch) {
-      try { names = JSON.parse(jsonMatch[0]); } catch(_) {}
+    extractedInstructions = '';
+
+    if (recipeImportMode === 'library') {
+      // Expect a JSON object { ingredients: [...], instructions: "..." }
+      const objMatch = text.match(/\{[\s\S]*\}/);
+      if (objMatch) {
+        try {
+          const parsed = JSON.parse(objMatch[0]);
+          names = parsed.ingredients || [];
+          extractedInstructions = (parsed.instructions || '').trim();
+        } catch(_) {}
+      }
+    } else {
+      const arrMatch = text.match(/\[[\s\S]*?\]/);
+      if (arrMatch) {
+        try { names = JSON.parse(arrMatch[0]); } catch(_) {}
+      }
     }
 
     if (!names.length) {
@@ -2333,13 +2363,13 @@ window.addSelectedIngredients = async function() {
     const targetId = viewRecipeId;
     const ingredients = sel.map(i=>({ name:i.name, qty:i.qty||'', category:i.cat }));
     if (targetId) {
-      await updateDoc(doc(db,'recipes',targetId),{ name:recipeName, ingredients, sourceUrl:'', servings:4 });
+      await updateDoc(doc(db,'recipes',targetId),{ name:recipeName, ingredients, instructions:extractedInstructions, sourceUrl:'', servings:4 });
       toast('Recipe updated!');
       viewRecipeId = null;
     } else {
       await addDoc(collection(db,'recipes'),{
-        name:recipeName, ingredients, sourceUrl:'', servings:4,
-        isFavorite:false, createdAt:serverTimestamp()
+        name:recipeName, ingredients, instructions:extractedInstructions,
+        sourceUrl:'', servings:4, isFavorite:false, createdAt:serverTimestamp()
       });
       toast(`"${recipeName}" saved to Recipe Library!`);
     }
@@ -2449,6 +2479,15 @@ window.openViewRecipe = function(id) {
     </div>`;
   }
   document.getElementById('vr-ingredients').innerHTML = ingHtml;
+
+  const instrEl = document.getElementById('vr-instructions');
+  instrEl.innerHTML = r.instructions
+    ? `<div class="recipe-instructions">
+         <div class="recipe-instructions-title">Instructions</div>
+         <div class="recipe-instructions-body">${esc(r.instructions)}</div>
+       </div>`
+    : '';
+
   document.getElementById('view-recipe-modal').style.display = 'flex';
 };
 window.closeViewRecipe = function() {
