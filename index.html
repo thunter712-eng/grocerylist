@@ -196,6 +196,7 @@
 
     /* ════════════════ APP ════════════════ */
     #app { display: none; min-height: 100vh; }
+    #app.visible { display: block; }
 
     /* ════════════════ HEADER ════════════════ */
     .header {
@@ -991,6 +992,93 @@
     .picker-item-name { flex: 1; font-size: .9375rem; color: var(--text); }
     .picker-item-star { font-size: .9rem; color: var(--border); }
     .picker-item-star.on { color: #F4A623; }
+
+    /* ════════════════ DESKTOP LAYOUT ════════════════ */
+    @media (min-width: 768px) {
+      body {
+        max-width: none;
+        margin-left: 220px;
+        background: #EEF0EA;
+      }
+
+      /* ── Fixed sidebar nav ── */
+      .nav-tabs {
+        position: fixed !important;
+        left: 0; top: 0;
+        width: 220px; height: 100vh;
+        flex-direction: column;
+        align-items: stretch;
+        border-right: 1px solid var(--border);
+        border-bottom: none;
+        background: var(--white);
+        padding: 0 .875rem 1rem;
+        gap: .25rem;
+        z-index: 90;
+        overflow-y: auto;
+        box-shadow: 1px 0 12px rgba(27,67,50,.06);
+      }
+      .nav-tabs::before {
+        content: '🛒 Hunter List';
+        font-family: 'Playfair Display', Georgia, serif;
+        font-style: italic;
+        font-size: 1rem;
+        color: var(--forest);
+        font-weight: 600;
+        display: block;
+        padding: 1.5rem .75rem 1.25rem;
+        border-bottom: 1px solid var(--border);
+        margin-bottom: .625rem;
+        margin-left: -.875rem;
+        margin-right: -.875rem;
+        padding-left: 1.625rem;
+        background: linear-gradient(135deg,#F0FAF4,#FFFFFF);
+      }
+      .nav-tabs .nav-tab {
+        font-size: .875rem !important;
+        letter-spacing: 0;
+        text-align: left;
+        border-bottom: none !important;
+        border-left: 3px solid transparent;
+        padding: .8rem .875rem;
+        border-radius: 0 10px 10px 0;
+        width: 100%;
+        color: var(--mid);
+      }
+      .nav-tabs .nav-tab:hover { background: var(--mint-faint); color: var(--forest); }
+      .nav-tabs .nav-tab.active {
+        border-left-color: var(--mint);
+        background: var(--mint-faint);
+        color: var(--forest);
+        border-bottom-color: transparent !important;
+      }
+
+      /* ── Header ── */
+      .header { padding: .875rem 2rem .875rem; }
+
+      /* ── Content ── */
+      .content { padding: 2rem 2.5rem 6rem; max-width: 860px; }
+
+      /* ── Meal plan: 4-column grid on desktop ── */
+      .day-cells {
+        display: grid;
+        grid-template-columns: repeat(4, 1fr);
+        gap: .625rem;
+      }
+
+      /* ── FAB ── */
+      .fab { right: 2.5rem; bottom: 2.5rem; }
+
+      /* ── Modals: center instead of bottom-sheet ── */
+      .overlay { align-items: center; padding: 2rem; }
+      .modal { border-radius: 20px; max-width: 520px; }
+
+      /* ── Toast: center in content area ── */
+      .toast { left: calc(110px + 50%); }
+
+      /* ── Item lists / cards: a little more breathing room ── */
+      .item-list  { border-radius: 16px; }
+      .aisle-header { padding: .5rem .25rem .6rem; }
+    }
   </style>
 </head>
 <body>
@@ -1491,7 +1579,7 @@ async function checkLogin() {
   if (h === PWD_HASH) {
     localStorage.setItem('hgl','1');
     document.getElementById('login-screen').style.display = 'none';
-    document.getElementById('app').style.display = 'block';
+    document.getElementById('app').classList.add('visible');
     startApp();
   } else {
     const el  = document.getElementById('pwd');
@@ -1506,13 +1594,13 @@ window.logout = function() {
   localStorage.removeItem('hgl');
   if (unsub) unsub();
   document.getElementById('login-screen').style.display = 'flex';
-  document.getElementById('app').style.display = 'none';
+  document.getElementById('app').classList.remove('visible');
 };
 document.getElementById('login-btn').addEventListener('click', checkLogin);
 document.getElementById('pwd').addEventListener('keydown', e => { if(e.key==='Enter') checkLogin(); });
 if (localStorage.getItem('hgl')==='1') {
   document.getElementById('login-screen').style.display = 'none';
-  document.getElementById('app').style.display = 'block';
+  document.getElementById('app').classList.add('visible');
   setTimeout(startApp, 0);
 }
 
