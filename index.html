@@ -6,7 +6,7 @@
   <title>Hunter Grocery List</title>
   <link rel="preconnect" href="https://fonts.googleapis.com">
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
-  <link href="https://fonts.googleapis.com/css2?family=Playfair+Display:ital,wght@0,700;1,400;1,600&family=DM+Sans:opsz,wght@9..40,300;9..40,400;9..40,500;9..40,600;9..40,700&display=swap" rel="stylesheet">
+  <link href="https://fonts.googleapis.com/css2?family=Playfair+Display:ital,wght@0,700;1,400;1,600&family=DM+Sans:opsz,wght@9..40,300;9..40,400;9..40,500;9..40,600;9..40,700&family=Caveat:wght@400;600;700&display=swap" rel="stylesheet">
   <link rel="apple-touch-icon" href="icon.png">
   <link rel="manifest" href="manifest.json">
   <meta name="theme-color" content="#1B4332">
@@ -993,6 +993,83 @@
     .picker-item-star { font-size: .9rem; color: var(--border); }
     .picker-item-star.on { color: #F4A623; }
 
+    /* ════════════════ CHALKBOARD WIDGET ════════════════ */
+    #widget-view {
+      position: fixed; inset: 0;
+      background:
+        radial-gradient(ellipse at 15% 85%, rgba(255,255,255,.018) 0%, transparent 55%),
+        radial-gradient(ellipse at 85% 15%, rgba(255,255,255,.022) 0%, transparent 55%),
+        #1B2B18;
+      display: none;
+      padding: 3%;
+      font-family: 'Caveat', cursive;
+    }
+    #widget-view.show { display: flex; }
+    .wg-frame {
+      flex: 1;
+      display: flex; flex-direction: column;
+      border: 2.5px solid rgba(210,185,120,.5);
+      border-radius: 3px;
+      padding: 4% 5% 3%;
+      position: relative;
+      box-shadow: inset 0 0 80px rgba(0,0,0,.25);
+    }
+    /* Corner ornaments */
+    .wg-corner {
+      position: absolute;
+      width: 28px; height: 28px;
+      border-color: rgba(210,185,120,.55);
+      border-style: solid;
+    }
+    .wg-corner.tl { top:-2px; left:-2px; border-width:3px 0 0 3px; border-radius:3px 0 0 0; }
+    .wg-corner.tr { top:-2px; right:-2px; border-width:3px 3px 0 0; border-radius:0 3px 0 0; }
+    .wg-corner.bl { bottom:-2px; left:-2px; border-width:0 0 3px 3px; border-radius:0 0 0 3px; }
+    .wg-corner.br { bottom:-2px; right:-2px; border-width:0 3px 3px 0; border-radius:0 0 3px 0; }
+    .wg-title {
+      text-align: center;
+      font-family: 'Caveat', cursive;
+      font-size: clamp(1.8rem, 7vw, 4.2rem);
+      font-weight: 700;
+      color: rgba(255,255,255,.88);
+      letter-spacing: .35em;
+      text-transform: uppercase;
+      margin-bottom: .4em;
+      text-shadow: 0 0 20px rgba(255,255,255,.08);
+    }
+    .wg-divider {
+      height: 1.5px;
+      background: linear-gradient(90deg, transparent, rgba(210,185,120,.45) 20%, rgba(210,185,120,.45) 80%, transparent);
+      margin-bottom: .7em;
+    }
+    .wg-days { flex: 1; display: flex; flex-direction: column; justify-content: space-around; }
+    .wg-day {
+      display: flex; align-items: baseline; gap: 3%;
+      border-bottom: 1px solid rgba(255,255,255,.1);
+      padding: .25em 0;
+    }
+    .wg-day:last-child { border-bottom: none; }
+    .wg-day.today .wg-meal { color: rgba(255,255,200,.92); font-weight: 700; }
+    .wg-day.today .wg-num,
+    .wg-day.today .wg-name { color: rgba(255,255,180,.65); }
+    .wg-num {
+      font-size: clamp(1rem, 4vw, 2.2rem);
+      color: rgba(255,255,255,.5);
+      width: 10%; text-align: right; flex-shrink: 0;
+    }
+    .wg-name {
+      font-size: clamp(.85rem, 3.2vw, 1.8rem);
+      color: rgba(255,255,255,.4);
+      width: 15%; flex-shrink: 0;
+      text-transform: uppercase;
+      letter-spacing: .06em;
+    }
+    .wg-meal {
+      font-size: clamp(1rem, 4vw, 2.2rem);
+      color: rgba(255,255,255,.82);
+      flex: 1;
+    }
+    .wg-meal.empty { color: rgba(255,255,255,.2); font-style: italic; }
+
     /* ════════════════ DESKTOP LAYOUT ════════════════ */
     @media (min-width: 768px) {
       body {
@@ -1082,6 +1159,19 @@
   </style>
 </head>
 <body>
+
+<!-- ── CHALKBOARD WIDGET ── -->
+<div id="widget-view">
+  <div class="wg-frame">
+    <div class="wg-corner tl"></div>
+    <div class="wg-corner tr"></div>
+    <div class="wg-corner bl"></div>
+    <div class="wg-corner br"></div>
+    <div class="wg-title">✦ Menu ✦</div>
+    <div class="wg-divider"></div>
+    <div class="wg-days" id="wg-days"></div>
+  </div>
+</div>
 
 <!-- ── LOGIN ── -->
 <div id="login-screen">
@@ -1322,8 +1412,10 @@ const firebaseConfig = {
 };
 // ════════════════════════════════════════════════
 
-const fbApp = initializeApp(firebaseConfig);
-const db    = getFirestore(fbApp);
+const fbApp    = initializeApp(firebaseConfig);
+const db       = getFirestore(fbApp);
+const IS_WIDGET = new URLSearchParams(location.search).has('widget');
+if (IS_WIDGET) initWidget();
 
 // ── PASSWORD (SHA-256 of "7") ──
 const PWD_HASH = '7902699be42c8a8e46fbbb4501726517e86b22c56a189f7625a6da49081b2451';
@@ -1598,7 +1690,7 @@ window.logout = function() {
 };
 document.getElementById('login-btn').addEventListener('click', checkLogin);
 document.getElementById('pwd').addEventListener('keydown', e => { if(e.key==='Enter') checkLogin(); });
-if (localStorage.getItem('hgl')==='1') {
+if (!IS_WIDGET && localStorage.getItem('hgl')==='1') {
   document.getElementById('login-screen').style.display = 'none';
   document.getElementById('app').classList.add('visible');
   setTimeout(startApp, 0);
@@ -2519,6 +2611,69 @@ async function doGenerateGroceryList(ingredientText) {
   } catch(e) {
     toast('Error: ' + (e.message||'Could not generate list'));
   }
+}
+
+// ════════════════════════════════════════════════
+// 📺 CHALKBOARD WIDGET  (?widget=1)
+// ════════════════════════════════════════════════
+function initWidget() {
+  document.getElementById('login-screen').style.display = 'none';
+  document.getElementById('widget-view').classList.add('show');
+
+  function weekMondayId() {
+    const now = new Date();
+    const day = now.getDay();
+    const diff = day===0 ? -6 : 1-day;
+    const mon = new Date(now);
+    mon.setDate(now.getDate() + diff);
+    mon.setHours(0,0,0,0);
+    return mon.toISOString().slice(0,10);
+  }
+
+  let currentPlanId = weekMondayId();
+
+  function subscribe(planId) {
+    return onSnapshot(doc(db,'mealPlans',planId), snap=>{
+      renderWidget(snap.exists() ? (snap.data().meals||[]) : []);
+    });
+  }
+
+  let unsub = subscribe(currentPlanId);
+
+  // Re-subscribe at midnight when the week rolls over
+  function scheduleMidnightRefresh() {
+    const now = new Date();
+    const midnight = new Date(now);
+    midnight.setDate(now.getDate()+1);
+    midnight.setHours(0,0,30,0);
+    setTimeout(()=>{
+      unsub();
+      currentPlanId = weekMondayId();
+      unsub = subscribe(currentPlanId);
+      scheduleMidnightRefresh();
+    }, midnight - now);
+  }
+  scheduleMidnightRefresh();
+}
+
+function renderWidget(meals) {
+  const DAYS = ['Monday','Tuesday','Wednesday','Thursday','Friday','Saturday','Sunday'];
+  const now  = new Date();
+  const day  = now.getDay();
+  const diff = day===0 ? -6 : 1-day;
+  const mon  = new Date(now); mon.setDate(now.getDate()+diff); mon.setHours(0,0,0,0);
+  const today = new Date(); today.setHours(0,0,0,0);
+
+  document.getElementById('wg-days').innerHTML = DAYS.map((name,i)=>{
+    const date = new Date(mon); date.setDate(mon.getDate()+i);
+    const meal = meals.find(m=>m.day===name);
+    const isToday = date.getTime()===today.getTime();
+    return `<div class="wg-day${isToday?' today':''}">
+      <span class="wg-num">${date.getDate()}</span>
+      <span class="wg-name">${name.slice(0,3)}</span>
+      <span class="wg-meal${meal?'':' empty'}">${meal ? esc(meal.recipeName) : '—'}</span>
+    </div>`;
+  }).join('');
 }
 
 </script>
