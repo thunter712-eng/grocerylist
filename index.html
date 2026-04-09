@@ -2273,7 +2273,9 @@ window.addRecipeToGroceryList = async function() {
 
 window.openImportIntoRecipe = function() {
   const r = recipes.find(r=>r.id===viewRecipeId);
+  const savedId = viewRecipeId;   // preserve before closeViewRecipe nulls it
   closeViewRecipe();
+  viewRecipeId = savedId;         // restore so addSelectedIngredients can update
   openRecipeModal('library', r ? r.name : '');
 };
 
