@@ -1114,29 +1114,32 @@
       display: flex; align-items: baseline; gap: 3%;
       border-bottom: 1px solid rgba(255,255,255,.1);
       padding: .08em 0;
+      font-family: 'Helvetica Neue', Arial, sans-serif;
     }
     .wg-day:last-child { border-bottom: none; }
-    .wg-day.today .wg-meal { color: rgba(255,255,200,.92); font-weight: 700; }
+    .wg-day.today .wg-meal { color: rgba(255,255,200,.95); font-weight: 700; }
     .wg-day.today .wg-num,
     .wg-day.today .wg-name { color: rgba(255,255,180,.65); }
     .wg-num {
-      font-size: clamp(.8rem, 2.2vw, 1.4rem);
-      color: rgba(255,255,255,.5);
+      font-size: clamp(.75rem, 2vw, 1.2rem);
+      color: rgba(255,255,255,.45);
       width: 10%; text-align: right; flex-shrink: 0;
     }
     .wg-name {
-      font-size: clamp(.7rem, 1.8vw, 1.1rem);
-      color: rgba(255,255,255,.4);
+      font-size: clamp(.65rem, 1.6vw, 1rem);
+      color: rgba(255,255,255,.38);
       width: 15%; flex-shrink: 0;
       text-transform: uppercase;
-      letter-spacing: .06em;
+      letter-spacing: .08em;
+      font-weight: 600;
     }
     .wg-meal {
-      font-size: clamp(.8rem, 2.2vw, 1.4rem);
-      color: rgba(255,255,255,.82);
+      font-size: clamp(1rem, 3vw, 1.9rem);
+      color: rgba(255,255,255,.85);
       flex: 1;
+      font-weight: 400;
     }
-    .wg-meal.empty { color: rgba(255,255,255,.2); font-style: italic; }
+    .wg-meal.empty { color: rgba(255,255,255,.18); font-style: italic; }
 
     /* ════════════════ DESKTOP LAYOUT ════════════════ */
     @media (min-width: 768px) {
