@@ -2411,10 +2411,11 @@ window.filterPickerRecipes = function(q) { renderPickerList(q); };
 
 window.selectRecipeForDay = async function(recipeId, recipeName) {
   if (!pickerDay || !mealPlan) return;
+  const day = pickerDay;   // save before closeRecipePicker nulls it
   closeRecipePicker();
   const planId = mealPlan.id;
-  const meals = [...(mealPlan.meals||[]).filter(m=>m.day!==pickerDay),
-                  { day:pickerDay, recipeId, recipeName, servings:4 }];
+  const meals = [...(mealPlan.meals||[]).filter(m=>m.day!==day),
+                  { day, recipeId, recipeName, servings:4 }];
   await setDoc(doc(db,'mealPlans',planId),
     { weekOf:getWeekMonday(weekOffset), meals, createdAt:serverTimestamp() },
     { merge:true });
@@ -2422,7 +2423,7 @@ window.selectRecipeForDay = async function(recipeId, recipeName) {
 
 window.clearMealDay = async function(day) {
   if (!mealPlan) return;
-  const meals = (mealPlan.meals||[]).filter(m=>m.day!==day);
+  const meals = (mealPlan.meals||[]).filter(m=>m.day!==day && m.day!=null);
   await setDoc(doc(db,'mealPlans',mealPlan.id),
     { weekOf:getWeekMonday(weekOffset), meals, createdAt:serverTimestamp() },
     { merge:true });
