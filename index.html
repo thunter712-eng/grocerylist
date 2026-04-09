@@ -2248,7 +2248,7 @@ window.extractIngredients = async function() {
         messages: [{
           role: 'user',
           content: recipeImportMode === 'library'
-            ? `Extract the ingredients and cooking instructions from this recipe. Return a JSON object with two fields:\n- "ingredients": array of objects, each with "name" (clean ingredient), "qty" (quantity+unit string, empty if not specified), and "category" (one of: PRODUCE,BAKERY,DELI,MEAT,SEAFOOD,DAIRY_EGGS_CHEESE,FROZEN,CEREALS_COFFEE,CANNED_SOUPS,BAKING_SPICES_CONDIMENTS,PASTA_RICE_BEANS,BEVERAGES,SNACKS_CRACKERS_CANDY,CHIPS,HOUSEHOLD,LAUNDRY_CLEANING,TOILETRIES_PERSONAL_CARE,WINE_BEER,PHARMACY_MEDICINE,OILS_DRESSINGS,FLORAL)\n- "instructions": the cooking steps as a plain numbered string (e.g. "1. Preheat oven...\\n2. Mix..."), or empty string if not found\n\nFormat: {"ingredients":[{"name":"chicken breast","qty":"2 lbs","category":"MEAT"}],"instructions":"1. ...\\n2. ..."}\n\nRecipe:\n${inputText}`
+            ? `Extract the title, ingredients, and cooking instructions from this recipe. Return a JSON object with three fields:\n- "title": the official recipe name as a string (e.g. "Chicken Shawarma"), or empty string if not found\n- "ingredients": array of objects, each with "name" (clean ingredient), "qty" (quantity+unit string, empty if not specified), and "category" (one of: PRODUCE,BAKERY,DELI,MEAT,SEAFOOD,DAIRY_EGGS_CHEESE,FROZEN,CEREALS_COFFEE,CANNED_SOUPS,BAKING_SPICES_CONDIMENTS,PASTA_RICE_BEANS,BEVERAGES,SNACKS_CRACKERS_CANDY,CHIPS,HOUSEHOLD,LAUNDRY_CLEANING,TOILETRIES_PERSONAL_CARE,WINE_BEER,PHARMACY_MEDICINE,OILS_DRESSINGS,FLORAL)\n- "instructions": the cooking steps as a plain numbered string (e.g. "1. Preheat oven...\\n2. Mix..."), or empty string if not found\n\nFormat: {"title":"Recipe Name","ingredients":[{"name":"chicken breast","qty":"2 lbs","category":"MEAT"}],"instructions":"1. ...\\n2. ..."}\n\nRecipe:\n${inputText}`
             : `Extract the grocery ingredients from this recipe. Return ONLY a JSON array of clean ingredient names — no quantities or prep instructions. Format: ["ingredient1","ingredient2",...]. Return [] if none found.\n\nRecipe:\n${inputText}`
         }]
       })
@@ -2272,6 +2272,11 @@ window.extractIngredients = async function() {
           const parsed = JSON.parse(objMatch[0]);
           names = parsed.ingredients || [];
           extractedInstructions = (parsed.instructions || '').trim();
+          // Auto-fill name if the field is empty
+          if (parsed.title) {
+            const nameEl = document.getElementById('recipe-lib-name');
+            if (nameEl && !nameEl.value.trim()) nameEl.value = parsed.title;
+          }
         } catch(_) {}
       }
     } else {
