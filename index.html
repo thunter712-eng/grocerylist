@@ -1463,7 +1463,7 @@
           <button class="fc-a1" id="fc-down" onclick="adjustFontSize(-1)" title="Smaller text">A−</button>
           <button class="fc-a2" id="fc-up" onclick="adjustFontSize(1)" title="Larger text">A+</button>
         </div>
-        <button class="icon-btn" onclick="openRecipeModal()" title="Import recipe">🍽️</button>
+        <button class="icon-btn" onclick="openRecipeModal()" title="Add recipe">🍽️</button>
         <button class="icon-btn" id="reset-btn" title="Reset cart">↺</button>
         <button class="icon-btn" onclick="logout()" title="Lock">🔒</button>
       </div>
@@ -1772,7 +1772,7 @@ let pickerDay    = null;
 let unsubRecipes = null;
 let unsubMealPlan= null;
 let recipesSeeded= false;
-let recipeImportMode = 'list'; // 'list' | 'library'
+// recipeImportMode removed — import always saves to recipe library
 let plannerTab = 'week';       // 'week' | 'history' | 'insights'
 let allMealPlansCache = null;
 
@@ -2140,19 +2140,16 @@ function updateApiKeyStatus() {
   }
 }
 
-window.openRecipeModal = function(mode='list', prefillName='') {
-  recipeImportMode = mode;
+window.openRecipeModal = function(prefillName='') {
   showRecipeStep(1);
   document.getElementById('recipe-text-input').value = '';
   document.getElementById('recipe-url-input').value  = '';
   document.getElementById('api-key-input-wrap').style.display = 'none';
   updateApiKeyStatus();
-  const isLib = mode === 'library';
-  document.getElementById('recipe-modal-title').textContent = isLib ? 'Save Recipe' : 'Import Recipe';
-  document.getElementById('recipe-lib-name-group').style.display = isLib ? 'block' : 'none';
+  document.getElementById('recipe-modal-title').textContent = 'Save Recipe';
+  document.getElementById('recipe-lib-name-group').style.display = 'block';
   document.getElementById('recipe-lib-name').value = prefillName;
   document.getElementById('recipe-modal').style.display = 'flex';
-  if (isLib) setTimeout(()=>document.getElementById('recipe-lib-name').focus(), 150);
 };
 
 window.closeRecipeModal = function() {
@@ -2247,9 +2244,7 @@ window.extractIngredients = async function() {
         max_tokens: 2048,
         messages: [{
           role: 'user',
-          content: recipeImportMode === 'library'
-            ? `Extract the title, ingredients, and cooking instructions from this recipe. Return a JSON object with three fields:\n- "title": the official recipe name as a string (e.g. "Chicken Shawarma"), or empty string if not found\n- "ingredients": array of objects, each with "name" (clean ingredient), "qty" (quantity+unit string, empty if not specified), and "category" (one of: PRODUCE,BAKERY,DELI,MEAT,SEAFOOD,DAIRY_EGGS_CHEESE,FROZEN,CEREALS_COFFEE,CANNED_SOUPS,BAKING_SPICES_CONDIMENTS,PASTA_RICE_BEANS,BEVERAGES,SNACKS_CRACKERS_CANDY,CHIPS,HOUSEHOLD,LAUNDRY_CLEANING,TOILETRIES_PERSONAL_CARE,WINE_BEER,PHARMACY_MEDICINE,OILS_DRESSINGS,FLORAL)\n- "instructions": the cooking steps as a plain numbered string (e.g. "1. Preheat oven...\\n2. Mix..."), or empty string if not found\n\nFormat: {"title":"Recipe Name","ingredients":[{"name":"chicken breast","qty":"2 lbs","category":"MEAT"}],"instructions":"1. ...\\n2. ..."}\n\nRecipe:\n${inputText}`
-            : `Extract the grocery ingredients from this recipe. Return ONLY a JSON array of clean ingredient names — no quantities or prep instructions. Format: ["ingredient1","ingredient2",...]. Return [] if none found.\n\nRecipe:\n${inputText}`
+          content: `Extract the title, ingredients, and cooking instructions from this recipe. Return ONLY a valid JSON object, nothing else:\n{"title":"Official Recipe Name","ingredients":[{"name":"chicken breast","qty":"2 lbs"},{"name":"garlic","qty":"4 cloves"}],"instructions":"1. Preheat oven to 400°F.\\n2. Season chicken..."}\n\nRules:\n- title: the official recipe name, or empty string if not found\n- ingredients: every ingredient as {name, qty} — name is the clean ingredient (no prep notes), qty is amount+unit (empty string if not given)\n- instructions: all cooking steps as a numbered string, or empty string if not found\n- Return ONLY the JSON object. No markdown, no explanation.\n\nRecipe:\n${inputText}`
         }]
       })
     });
@@ -2264,26 +2259,18 @@ window.extractIngredients = async function() {
     let names = [];
     extractedInstructions = '';
 
-    if (recipeImportMode === 'library') {
-      // Expect a JSON object { ingredients: [...], instructions: "..." }
-      const objMatch = text.match(/\{[\s\S]*\}/);
-      if (objMatch) {
-        try {
-          const parsed = JSON.parse(objMatch[0]);
-          names = parsed.ingredients || [];
-          extractedInstructions = (parsed.instructions || '').trim();
-          // Auto-fill name if the field is empty
-          if (parsed.title) {
-            const nameEl = document.getElementById('recipe-lib-name');
-            if (nameEl && !nameEl.value.trim()) nameEl.value = parsed.title;
-          }
-        } catch(_) {}
-      }
-    } else {
-      const arrMatch = text.match(/\[[\s\S]*?\]/);
-      if (arrMatch) {
-        try { names = JSON.parse(arrMatch[0]); } catch(_) {}
-      }
+    // Always expect a JSON object { title, ingredients, instructions }
+    const objMatch = text.match(/\{[\s\S]*\}/);
+    if (objMatch) {
+      try {
+        const parsed = JSON.parse(objMatch[0]);
+        names = parsed.ingredients || [];
+        extractedInstructions = (parsed.instructions || '').trim();
+        if (parsed.title) {
+          const nameEl = document.getElementById('recipe-lib-name');
+          if (nameEl && !nameEl.value.trim()) nameEl.value = parsed.title;
+        }
+      } catch(_) {}
     }
 
     if (!names.length) {
@@ -2292,22 +2279,14 @@ window.extractIngredients = async function() {
       return;
     }
 
-    if (recipeImportMode === 'library') {
-      // names is array of {name, qty, category}
-      extractedIngredients = names
-        .filter(n=>n && n.name)
-        .map(n=>({
-          name: String(n.name).trim(),
-          qty:  String(n.qty||'').trim(),
-          cat:  n.category && CATS[n.category] ? n.category : detectCat(n.name),
-          selected: true
-        }));
-    } else {
-      extractedIngredients = names
-        .map(n=>String(n).trim())
-        .filter(n=>n.length > 0)
-        .map(name=>({ name, qty: '', cat: detectCat(name), selected: true }));
-    }
+    extractedIngredients = names
+      .filter(n => n && n.name)
+      .map(n => ({
+        name: String(n.name).trim(),
+        qty:  String(n.qty || '').trim(),
+        cat:  detectCat(n.name),
+        selected: true
+      }));
 
     renderIngredientPreview();
     showRecipeStep(3);
@@ -2324,9 +2303,7 @@ function renderIngredientPreview() {
     `${extractedIngredients.length} ingredient${extractedIngredients.length!==1?'s':''} found`;
   document.getElementById('ing-count-label').textContent =
     `${selCount} selected`;
-  document.getElementById('ing-add-btn').textContent = recipeImportMode === 'library'
-    ? `Save Recipe`
-    : `Add ${selCount} Item${selCount!==1?'s':''}`;
+  document.getElementById('ing-add-btn').textContent = 'Save Recipe';
 
   document.getElementById('ing-list').innerHTML = extractedIngredients.map((ing,idx)=>`
     <div class="ing-item" onclick="toggleIngredient(${idx})">
@@ -2355,49 +2332,28 @@ window.addSelectedIngredients = async function() {
   const sel = extractedIngredients.filter(i=>i.selected);
   if (!sel.length) { toast('No items selected'); return; }
 
-  if (recipeImportMode === 'library') {
-    const recipeName = document.getElementById('recipe-lib-name').value.trim();
-    if (!recipeName) {
-      toast('Enter a recipe name first');
-      showRecipeStep(1);
-      setTimeout(()=>document.getElementById('recipe-lib-name').focus(),100);
-      return;
-    }
-    closeRecipeModal();
-    // If we're updating an existing recipe's ingredients
-    const targetId = viewRecipeId;
-    const ingredients = sel.map(i=>({ name:i.name, qty:i.qty||'', category:i.cat }));
-    if (targetId) {
-      await updateDoc(doc(db,'recipes',targetId),{ name:recipeName, ingredients, instructions:extractedInstructions, sourceUrl:'', servings:4 });
-      toast('Recipe updated!');
-      viewRecipeId = null;
-    } else {
-      await addDoc(collection(db,'recipes'),{
-        name:recipeName, ingredients, instructions:extractedInstructions,
-        sourceUrl:'', servings:4, isFavorite:false, createdAt:serverTimestamp()
-      });
-      toast(`"${recipeName}" saved to Recipe Library!`);
-    }
-    setView('recipes');
+  const recipeName = document.getElementById('recipe-lib-name').value.trim();
+  if (!recipeName) {
+    toast('Enter a recipe name first');
+    showRecipeStep(1);
+    setTimeout(()=>document.getElementById('recipe-lib-name').focus(),100);
     return;
   }
-
   closeRecipeModal();
-  let added = 0;
-  for (const ing of sel) {
-    const dup = items.find(i=>i.recurring && i.name.toLowerCase()===ing.name.toLowerCase());
-    if (dup) {
-      await updateDoc(doc(db,'items',dup.id),{active:true});
-    } else {
-      await addDoc(collection(db,'items'),{
-        name:ing.name, category:ing.cat, recurring:false, active:true,
-        checked:{publix:false,walmart:false,traderjoes:false},
-        addedAt:serverTimestamp()
-      });
-    }
-    added++;
+  const targetId = viewRecipeId;
+  const ingredients = sel.map(i=>({ name:i.name, qty:i.qty||'', category:i.cat }));
+  if (targetId) {
+    await updateDoc(doc(db,'recipes',targetId),{ name:recipeName, ingredients, instructions:extractedInstructions, sourceUrl:'', servings:4 });
+    toast('Recipe updated!');
+    viewRecipeId = null;
+  } else {
+    await addDoc(collection(db,'recipes'),{
+      name:recipeName, ingredients, instructions:extractedInstructions,
+      sourceUrl:'', servings:4, isFavorite:false, createdAt:serverTimestamp()
+    });
+    toast(`"${recipeName}" saved to Recipe Library!`);
   }
-  toast(`${added} ingredient${added!==1?'s':''} added to list!`);
+  setView('recipes');
 };
 
 // ════════════════════════════════════════════════
@@ -2430,7 +2386,7 @@ function renderRecipes() {
     return a.name.localeCompare(b.name);
   });
 
-  let html = `<button class="btn-add-recipe" onclick="openRecipeModal('library')">+ Add Recipe</button>`;
+  let html = `<button class="btn-add-recipe" onclick="openRecipeModal()">+ Add Recipe</button>`;
   if (!sorted.length) {
     html += `<div class="empty"><span class="empty-icon">📖</span>
       <div class="empty-title">No recipes yet</div>
@@ -2537,7 +2493,7 @@ window.openImportIntoRecipe = function() {
   const savedId = viewRecipeId;   // preserve before closeViewRecipe nulls it
   closeViewRecipe();
   viewRecipeId = savedId;         // restore so addSelectedIngredients can update
-  openRecipeModal('library', r ? r.name : '');
+  openRecipeModal(r ? r.name : '');
 };
 
 window.deleteRecipeFromView = async function() {
