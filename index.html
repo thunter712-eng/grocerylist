@@ -815,6 +815,182 @@
       margin: 0 auto 1rem;
     }
     @keyframes spin { to { transform: rotate(360deg); } }
+
+    /* ════════════════ 4-TAB NAV ════════════════ */
+    .nav-tabs .nav-tab { font-size: .72rem; padding: .7rem 0; letter-spacing: 0; }
+
+    /* ════════════════ RECIPE LIBRARY ════════════════ */
+    .recipe-row {
+      display: flex; align-items: center;
+      padding: .9rem 1rem;
+      border-bottom: 1px solid var(--border);
+      gap: .875rem; cursor: pointer;
+      transition: background .12s;
+    }
+    .recipe-row:last-child { border-bottom: none; }
+    .recipe-row:active { background: var(--mint-faint); }
+    .recipe-info { flex: 1; min-width: 0; }
+    .recipe-name { font-size: .9375rem; font-weight: 500; color: var(--text); }
+    .recipe-meta { font-size: .72rem; color: var(--light); margin-top: .15rem; }
+    .star-btn {
+      background: none; border: none;
+      font-size: 1.25rem; color: var(--border);
+      cursor: pointer; padding: .35rem;
+      transition: color .15s, transform .15s;
+      line-height: 1; flex-shrink: 0;
+    }
+    .star-btn.on { color: #F4A623; }
+    .star-btn:active { transform: scale(1.3); }
+    .btn-add-recipe {
+      width: 100%; padding: .875rem;
+      background: var(--white);
+      border: 1.5px dashed var(--border);
+      border-radius: 14px;
+      font-family: 'DM Sans', sans-serif;
+      font-size: .9rem; font-weight: 600;
+      color: var(--forest-lite);
+      cursor: pointer;
+      transition: background .15s, border-color .15s;
+      margin-bottom: .875rem;
+    }
+    .btn-add-recipe:active { background: var(--mint-faint); border-color: var(--mint); }
+    .recipe-ing-list {
+      background: var(--cream); border-radius: 12px;
+      padding: .625rem 1rem; margin-bottom: 1rem;
+      max-height: 260px; overflow-y: auto;
+    }
+    .recipe-ing-item {
+      display: flex; align-items: baseline; gap: .5rem;
+      padding: .4rem 0;
+      border-bottom: 1px solid var(--border);
+      font-size: .875rem; color: var(--text);
+    }
+    .recipe-ing-item:last-child { border-bottom: none; }
+    .recipe-ing-qty {
+      font-size: .72rem; color: var(--light);
+      min-width: 56px; text-align: right; flex-shrink: 0;
+    }
+    .vr-action-row {
+      display: flex; gap: .5rem; flex-wrap: wrap; margin-top: 1.25rem;
+    }
+    .btn-danger {
+      flex: 1; padding: .9rem;
+      background: var(--red-pale);
+      border: 1.5px solid #F5C2C2;
+      border-radius: 12px;
+      font-family: 'DM Sans', sans-serif;
+      font-size: .9rem; font-weight: 600;
+      color: var(--red);
+      cursor: pointer;
+      transition: background .15s;
+    }
+    .btn-danger:active { background: #F9D4D4; }
+
+    /* ════════════════ MEAL PLANNER ════════════════ */
+    .week-nav {
+      display: flex; align-items: center;
+      justify-content: space-between;
+      margin-bottom: 1rem; gap: .5rem;
+    }
+    .week-nav-btn {
+      width: 38px; height: 38px;
+      background: var(--white);
+      border: 1.5px solid var(--border);
+      border-radius: 10px;
+      font-size: 1.2rem; color: var(--mid);
+      cursor: pointer;
+      display: flex; align-items: center; justify-content: center;
+      flex-shrink: 0; transition: background .15s;
+    }
+    .week-nav-btn:active { background: var(--mint-faint); }
+    .week-label { text-align: center; flex: 1; }
+    .week-range { font-size: .85rem; font-weight: 600; color: var(--text); }
+    .week-current-badge {
+      display: inline-block;
+      font-size: .62rem; font-weight: 700;
+      color: var(--forest-mid);
+      background: var(--mint-pale);
+      border-radius: 20px;
+      padding: .1rem .5rem;
+      margin-top: .2rem;
+      letter-spacing: .04em;
+      text-transform: uppercase;
+    }
+    .day-cells { display: flex; flex-direction: column; gap: .5rem; margin-bottom: 1.25rem; }
+    .day-cell {
+      background: var(--white); border-radius: 14px;
+      border: 1.5px solid var(--border);
+      padding: .7rem 1rem;
+      box-shadow: var(--sh-xs);
+      transition: border-color .15s;
+    }
+    .day-cell.today { border-color: var(--mint); }
+    .day-header {
+      display: flex; justify-content: space-between;
+      align-items: center; margin-bottom: .45rem;
+    }
+    .day-name {
+      font-size: .7rem; font-weight: 700;
+      color: var(--mid); text-transform: uppercase; letter-spacing: .07em;
+    }
+    .day-date { font-size: .7rem; color: var(--light); }
+    .day-cell.today .day-name { color: var(--forest-mid); }
+    .day-recipe-assigned { display: flex; align-items: center; gap: .5rem; }
+    .day-recipe-name { flex: 1; font-size: .875rem; font-weight: 500; color: var(--text); }
+    .day-clear-btn {
+      background: none; border: none;
+      color: #D1D8D3; font-size: .75rem;
+      cursor: pointer; padding: .2rem .3rem;
+      border-radius: 5px; transition: color .12s;
+    }
+    .day-clear-btn:active { color: var(--red); }
+    .day-add-btn {
+      width: 100%; padding: .4rem .75rem;
+      background: var(--cream);
+      border: 1.5px dashed var(--border);
+      border-radius: 8px;
+      font-family: 'DM Sans', sans-serif;
+      font-size: .78rem; font-weight: 500;
+      color: var(--light); cursor: pointer; text-align: left;
+      transition: background .15s, border-color .15s, color .15s;
+    }
+    .day-add-btn:active { background: var(--mint-faint); border-color: var(--mint); color: var(--forest-lite); }
+    .btn-generate {
+      width: 100%; padding: 1rem;
+      background: linear-gradient(145deg, var(--forest-mid) 0%, var(--forest) 100%);
+      color: white; border: none; border-radius: 16px;
+      font-family: 'DM Sans', sans-serif;
+      font-size: .95rem; font-weight: 700;
+      cursor: pointer;
+      box-shadow: 0 6px 20px rgba(27,67,50,.3);
+      display: flex; flex-direction: column; align-items: center; gap: .12rem;
+      transition: transform .15s, box-shadow .15s; letter-spacing: .02em;
+    }
+    .btn-generate:active { transform: scale(.98); box-shadow: 0 3px 10px rgba(27,67,50,.2); }
+    .btn-generate-sub { font-size: .72rem; font-weight: 400; opacity: .72; }
+    .picker-search {
+      width: 100%; padding: .75rem 1rem;
+      border: 1.5px solid var(--border); border-radius: 12px;
+      font-family: 'DM Sans', sans-serif; font-size: .9rem; color: var(--text);
+      background: var(--cream); outline: none; margin-bottom: 1rem;
+      transition: border-color .2s;
+    }
+    .picker-search:focus { border-color: var(--mint); background: white; }
+    .picker-list {
+      max-height: 340px; overflow-y: auto;
+      border: 1.5px solid var(--border); border-radius: 12px; background: var(--white);
+    }
+    .picker-item {
+      display: flex; align-items: center; gap: .75rem;
+      padding: .85rem 1rem;
+      border-bottom: 1px solid var(--border);
+      cursor: pointer; transition: background .1s;
+    }
+    .picker-item:last-child { border-bottom: none; }
+    .picker-item:active { background: var(--mint-faint); }
+    .picker-item-name { flex: 1; font-size: .9375rem; color: var(--text); }
+    .picker-item-star { font-size: .9rem; color: var(--border); }
+    .picker-item-star.on { color: #F4A623; }
   </style>
 </head>
 <body>
@@ -887,7 +1063,11 @@
 
     <!-- Step 1: Input -->
     <div class="recipe-step active" id="recipe-step-1">
-      <div class="modal-title">Import Recipe</div>
+      <div class="modal-title" id="recipe-modal-title">Import Recipe</div>
+      <div class="form-group" id="recipe-lib-name-group" style="display:none">
+        <label class="form-label">Recipe Name</label>
+        <input type="text" class="form-input" id="recipe-lib-name" placeholder="e.g. Chicken Shawarma" autocomplete="off">
+      </div>
       <div class="recipe-tabs">
         <button class="recipe-tab active" id="rtab-text" onclick="switchRecipeTab('text')">📋 Paste Text</button>
         <button class="recipe-tab" id="rtab-url" onclick="switchRecipeTab('url')">🔗 Paste URL</button>
@@ -955,6 +1135,40 @@
   </div>
 </div>
 
+<!-- ── VIEW RECIPE MODAL ── -->
+<div class="overlay" id="view-recipe-modal" style="display:none" onclick="if(event.target===this)closeViewRecipe()">
+  <div class="modal">
+    <div class="modal-handle"></div>
+    <div style="display:flex;align-items:flex-start;justify-content:space-between;gap:.5rem;margin-bottom:.35rem">
+      <div class="modal-title" id="vr-name" style="margin-bottom:0;flex:1"></div>
+      <button class="star-btn" id="vr-star" onclick="toggleFavoriteFromView()">★</button>
+    </div>
+    <div style="font-size:.75rem;color:var(--light);margin-bottom:1rem" id="vr-meta"></div>
+    <div id="vr-ingredients"></div>
+    <div class="vr-action-row">
+      <button class="btn-cancel" onclick="closeViewRecipe()">Close</button>
+      <button class="btn-save" style="flex:2" onclick="addRecipeToGroceryList()" id="vr-add-btn">Add to List</button>
+    </div>
+    <div class="vr-action-row" style="margin-top:.5rem">
+      <button class="btn-cancel" onclick="openImportIntoRecipe()" id="vr-import-btn" style="flex:1;font-size:.8rem">Import Ingredients</button>
+      <button class="btn-danger" onclick="deleteRecipeFromView()" style="flex:1;font-size:.8rem">Delete Recipe</button>
+    </div>
+  </div>
+</div>
+
+<!-- ── RECIPE PICKER MODAL ── -->
+<div class="overlay" id="recipe-picker-modal" style="display:none" onclick="if(event.target===this)closeRecipePicker()">
+  <div class="modal">
+    <div class="modal-handle"></div>
+    <div class="modal-title" id="picker-title">Choose a Meal</div>
+    <input type="text" class="picker-search" id="picker-search" placeholder="Search recipes…" oninput="filterPickerRecipes(this.value)" autocomplete="off">
+    <div class="picker-list" id="picker-list"></div>
+    <div style="margin-top:.875rem">
+      <button class="btn-cancel" style="width:100%;padding:.9rem" onclick="closeRecipePicker()">Cancel</button>
+    </div>
+  </div>
+</div>
+
 <!-- ── APP ── -->
 <div id="app">
   <div class="header">
@@ -978,8 +1192,10 @@
   </div>
 
   <div class="nav-tabs">
-    <button class="nav-tab active" onclick="setView('list')" id="nav-list">Shopping List</button>
-    <button class="nav-tab" onclick="setView('master')" id="nav-master">Master List</button>
+    <button class="nav-tab active" onclick="setView('list')" id="nav-list">List</button>
+    <button class="nav-tab" onclick="setView('master')" id="nav-master">Master</button>
+    <button class="nav-tab" onclick="setView('recipes')" id="nav-recipes">Recipes</button>
+    <button class="nav-tab" onclick="setView('mealplan')" id="nav-mealplan">Meal Plan</button>
   </div>
 
   <div id="view-list" class="content">
@@ -987,6 +1203,12 @@
   </div>
   <div id="view-master" class="content" style="display:none">
     <div id="master-container"></div>
+  </div>
+  <div id="view-recipes" class="content" style="display:none">
+    <div id="recipes-container"></div>
+  </div>
+  <div id="view-mealplan" class="content" style="display:none">
+    <div id="mealplan-container"></div>
   </div>
 
   <button class="fab" onclick="openAddModal()" title="Add item">+</button>
@@ -1246,12 +1468,21 @@ function detectCat(name) {
 }
 
 // ── STATE ──
-let store       = 'publix';
-let view        = 'list';
-let items       = [];
-let editId      = null;
-let unsub       = null;
+let store        = 'publix';
+let view         = 'list';
+let items        = [];
+let editId       = null;
+let unsub        = null;
 let claudeApiKey = '';
+let recipes      = [];
+let mealPlan     = null;
+let weekOffset   = 0;
+let viewRecipeId = null;
+let pickerDay    = null;
+let unsubRecipes = null;
+let unsubMealPlan= null;
+let recipesSeeded= false;
+let recipeImportMode = 'list'; // 'list' | 'library'
 
 // ── AUTH ──
 async function checkLogin() {
@@ -1293,10 +1524,23 @@ async function startApp() {
     const cfgDoc = await getDoc(doc(db,'config','app'));
     if (cfgDoc.exists()) claudeApiKey = cfgDoc.data().claudeKey || '';
   } catch(_) {}
+  // Items listener
   unsub = onSnapshot(collection(db,'items'), snap => {
     items = snap.docs.map(d=>({id:d.id,...d.data()}));
     render();
   });
+  // Recipes listener
+  if (unsubRecipes) unsubRecipes();
+  unsubRecipes = onSnapshot(collection(db,'recipes'), snap => {
+    recipes = snap.docs.map(d=>({id:d.id,...d.data()}));
+    if (!recipesSeeded && recipes.length === 0) {
+      recipesSeeded = true;
+      seedDefaultRecipes();
+    }
+    if (view === 'recipes') renderRecipes();
+  });
+  // Meal plan listener for current week
+  loadMealPlan(weekOffset);
 }
 
 // ── NAV ──
@@ -1310,8 +1554,11 @@ window.setView = function(v) {
   view = v;
   document.querySelectorAll('.nav-tab').forEach(t=>t.classList.remove('active'));
   document.getElementById('nav-'+v).classList.add('active');
-  document.getElementById('view-list').style.display   = v==='list'?'block':'none';
-  document.getElementById('view-master').style.display = v==='master'?'block':'none';
+  ['list','master','recipes','mealplan'].forEach(id=>{
+    document.getElementById('view-'+id).style.display = id===v ? 'block' : 'none';
+  });
+  if (v==='recipes')  renderRecipes();
+  if (v==='mealplan') renderMealPlan();
 };
 
 // ── RENDER ──
@@ -1572,13 +1819,19 @@ function updateApiKeyStatus() {
   }
 }
 
-window.openRecipeModal = function() {
+window.openRecipeModal = function(mode='list', prefillName='') {
+  recipeImportMode = mode;
   showRecipeStep(1);
   document.getElementById('recipe-text-input').value = '';
   document.getElementById('recipe-url-input').value  = '';
   document.getElementById('api-key-input-wrap').style.display = 'none';
   updateApiKeyStatus();
+  const isLib = mode === 'library';
+  document.getElementById('recipe-modal-title').textContent = isLib ? 'Save Recipe' : 'Import Recipe';
+  document.getElementById('recipe-lib-name-group').style.display = isLib ? 'block' : 'none';
+  document.getElementById('recipe-lib-name').value = prefillName;
   document.getElementById('recipe-modal').style.display = 'flex';
+  if (isLib) setTimeout(()=>document.getElementById('recipe-lib-name').focus(), 150);
 };
 
 window.closeRecipeModal = function() {
@@ -1673,7 +1926,9 @@ window.extractIngredients = async function() {
         max_tokens: 1024,
         messages: [{
           role: 'user',
-          content: `Extract the grocery ingredients from this recipe. Return ONLY a JSON array of clean ingredient names — no quantities, measurements, or preparation instructions. Just the base ingredient, e.g. "chicken breast" not "2 lbs chicken breast, diced". Format: ["ingredient1","ingredient2",...]. Return [] if no ingredients found.\n\nRecipe:\n${inputText}`
+          content: recipeImportMode === 'library'
+            ? `Extract the ingredients from this recipe with quantities. Return a JSON array where each item has "name" (clean ingredient, e.g. "chicken breast"), "qty" (quantity + unit string, e.g. "2 lbs" or "4 cloves" — empty string if not specified), and "category" (one of: PRODUCE,BAKERY,DELI,MEAT,SEAFOOD,DAIRY_EGGS_CHEESE,FROZEN,CEREALS_COFFEE,CANNED_SOUPS,BAKING_SPICES_CONDIMENTS,PASTA_RICE_BEANS,BEVERAGES,SNACKS_CRACKERS_CANDY,CHIPS,HOUSEHOLD,LAUNDRY_CLEANING,TOILETRIES_PERSONAL_CARE,WINE_BEER,PHARMACY_MEDICINE,OILS_DRESSINGS,FLORAL). Format: [{"name":"chicken breast","qty":"2 lbs","category":"MEAT"},...]. Return [] if none found.\n\nRecipe:\n${inputText}`
+            : `Extract the grocery ingredients from this recipe. Return ONLY a JSON array of clean ingredient names — no quantities or prep instructions. Format: ["ingredient1","ingredient2",...]. Return [] if none found.\n\nRecipe:\n${inputText}`
         }]
       })
     });
@@ -1697,10 +1952,22 @@ window.extractIngredients = async function() {
       return;
     }
 
-    extractedIngredients = names
-      .map(n=>String(n).trim())
-      .filter(n=>n.length > 0)
-      .map(name=>({ name, cat: detectCat(name), selected: true }));
+    if (recipeImportMode === 'library') {
+      // names is array of {name, qty, category}
+      extractedIngredients = names
+        .filter(n=>n && n.name)
+        .map(n=>({
+          name: String(n.name).trim(),
+          qty:  String(n.qty||'').trim(),
+          cat:  n.category && CATS[n.category] ? n.category : detectCat(n.name),
+          selected: true
+        }));
+    } else {
+      extractedIngredients = names
+        .map(n=>String(n).trim())
+        .filter(n=>n.length > 0)
+        .map(name=>({ name, qty: '', cat: detectCat(name), selected: true }));
+    }
 
     renderIngredientPreview();
     showRecipeStep(3);
@@ -1717,13 +1984,15 @@ function renderIngredientPreview() {
     `${extractedIngredients.length} ingredient${extractedIngredients.length!==1?'s':''} found`;
   document.getElementById('ing-count-label').textContent =
     `${selCount} selected`;
-  document.getElementById('ing-add-btn').textContent =
-    `Add ${selCount} Item${selCount!==1?'s':''}`;
+  document.getElementById('ing-add-btn').textContent = recipeImportMode === 'library'
+    ? `Save Recipe`
+    : `Add ${selCount} Item${selCount!==1?'s':''}`;
 
   document.getElementById('ing-list').innerHTML = extractedIngredients.map((ing,idx)=>`
     <div class="ing-item" onclick="toggleIngredient(${idx})">
       <div class="ing-check${ing.selected?' on':''}">✓</div>
       <span class="ing-label">${esc(ing.name)}</span>
+      ${ing.qty ? `<span style="font-size:.7rem;color:var(--light)">${esc(ing.qty)}</span>` : ''}
       <span class="ing-cat">${CATS[ing.cat]||ing.cat}</span>
     </div>
   `).join('');
@@ -1745,6 +2014,34 @@ window.goBackToInput = function() { showRecipeStep(1); };
 window.addSelectedIngredients = async function() {
   const sel = extractedIngredients.filter(i=>i.selected);
   if (!sel.length) { toast('No items selected'); return; }
+
+  if (recipeImportMode === 'library') {
+    const recipeName = document.getElementById('recipe-lib-name').value.trim();
+    if (!recipeName) {
+      toast('Enter a recipe name first');
+      showRecipeStep(1);
+      setTimeout(()=>document.getElementById('recipe-lib-name').focus(),100);
+      return;
+    }
+    closeRecipeModal();
+    // If we're updating an existing recipe's ingredients
+    const targetId = viewRecipeId;
+    const ingredients = sel.map(i=>({ name:i.name, qty:i.qty||'', category:i.cat }));
+    if (targetId) {
+      await updateDoc(doc(db,'recipes',targetId),{ name:recipeName, ingredients, sourceUrl:'', servings:4 });
+      toast('Recipe updated!');
+      viewRecipeId = null;
+    } else {
+      await addDoc(collection(db,'recipes'),{
+        name:recipeName, ingredients, sourceUrl:'', servings:4,
+        isFavorite:false, createdAt:serverTimestamp()
+      });
+      toast(`"${recipeName}" saved to Recipe Library!`);
+    }
+    setView('recipes');
+    return;
+  }
+
   closeRecipeModal();
   let added = 0;
   for (const ing of sel) {
@@ -1753,15 +2050,382 @@ window.addSelectedIngredients = async function() {
       await updateDoc(doc(db,'items',dup.id),{active:true});
     } else {
       await addDoc(collection(db,'items'),{
-        name: ing.name, category: ing.cat, recurring: false, active: true,
-        checked: {publix:false,walmart:false,traderjoes:false},
-        addedAt: serverTimestamp()
+        name:ing.name, category:ing.cat, recurring:false, active:true,
+        checked:{publix:false,walmart:false,traderjoes:false},
+        addedAt:serverTimestamp()
       });
     }
     added++;
   }
   toast(`${added} ingredient${added!==1?'s':''} added to list!`);
 };
+
+// ════════════════════════════════════════════════
+// 📚 RECIPE LIBRARY
+// ════════════════════════════════════════════════
+
+const DEFAULT_RECIPES = [
+  'Chicken Shawarma','Sausage Tortellini','Salmon Pasta','Grilled Chicken',
+  'Salmon','Drip Beef','Oven Fried Chicken','Tilapia','Burgers',
+  'Chicken & Wild Rice Casserole','Chicken Alfredo','Spaghetti',
+  'Chicken Tetrazzini','Mini Meat Loaves','Tacos','Pizza',
+  'Chicken Puffs','Poppy Seed Chicken Casserole','Salmon Bowls'
+];
+
+async function seedDefaultRecipes() {
+  for (const name of DEFAULT_RECIPES) {
+    await addDoc(collection(db,'recipes'),{
+      name, ingredients:[], sourceUrl:'', servings:4,
+      isFavorite:true, createdAt:serverTimestamp()
+    });
+  }
+}
+
+function renderRecipes() {
+  const el = document.getElementById('recipes-container');
+  if (!el) return;
+  const sorted = [...recipes].sort((a,b)=>{
+    if (a.isFavorite && !b.isFavorite) return -1;
+    if (!a.isFavorite && b.isFavorite) return 1;
+    return a.name.localeCompare(b.name);
+  });
+
+  let html = `<button class="btn-add-recipe" onclick="openRecipeModal('library')">+ Add Recipe</button>`;
+  if (!sorted.length) {
+    html += `<div class="empty"><span class="empty-icon">📖</span>
+      <div class="empty-title">No recipes yet</div>
+      <div class="empty-text">Tap above to save your first recipe.</div></div>`;
+  } else {
+    html += `<div class="item-list">`;
+    sorted.forEach(r=>{
+      const cnt = r.ingredients?.length||0;
+      html += `<div class="recipe-row" onclick="openViewRecipe('${r.id}')">
+        <div class="recipe-info">
+          <div class="recipe-name">${esc(r.name)}</div>
+          <div class="recipe-meta">${cnt ? cnt+' ingredient'+(cnt!==1?'s':'') : 'No ingredients yet — tap to import'}</div>
+        </div>
+        <button class="star-btn${r.isFavorite?' on':''}" onclick="event.stopPropagation();toggleFavorite('${r.id}')">★</button>
+      </div>`;
+    });
+    html += `</div>`;
+  }
+  el.innerHTML = html;
+}
+
+window.openViewRecipe = function(id) {
+  viewRecipeId = id;
+  const r = recipes.find(r=>r.id===id);
+  if (!r) return;
+  document.getElementById('vr-name').textContent = r.name;
+  document.getElementById('vr-star').className = 'star-btn' + (r.isFavorite?' on':'');
+  const cnt = r.ingredients?.length||0;
+  document.getElementById('vr-meta').textContent =
+    cnt + ' ingredient' + (cnt!==1?'s':'') + (r.sourceUrl ? ' · ' + r.sourceUrl : '');
+  document.getElementById('vr-add-btn').textContent =
+    cnt ? 'Add to Grocery List' : 'No ingredients yet';
+  document.getElementById('vr-add-btn').disabled = !cnt;
+  document.getElementById('vr-import-btn').textContent =
+    cnt ? 'Update Ingredients' : 'Import Ingredients';
+
+  let ingHtml = '';
+  if (cnt) {
+    ingHtml = `<div class="recipe-ing-list">`;
+    (r.ingredients||[]).forEach(i=>{
+      ingHtml += `<div class="recipe-ing-item">
+        <span style="flex:1">${esc(i.name)}</span>
+        ${i.qty ? `<span class="recipe-ing-qty">${esc(i.qty)}</span>` : ''}
+        <span class="recipe-ing-qty">${CATS[i.category]||''}</span>
+      </div>`;
+    });
+    ingHtml += `</div>`;
+  } else {
+    ingHtml = `<div style="text-align:center;padding:1.5rem 1rem;color:var(--light);font-size:.85rem">
+      No ingredients saved yet. Use "Import Ingredients" to add them from a URL or pasted text.
+    </div>`;
+  }
+  document.getElementById('vr-ingredients').innerHTML = ingHtml;
+  document.getElementById('view-recipe-modal').style.display = 'flex';
+};
+window.closeViewRecipe = function() {
+  document.getElementById('view-recipe-modal').style.display = 'none';
+  viewRecipeId = null;
+};
+
+window.toggleFavorite = async function(id) {
+  const r = recipes.find(r=>r.id===id); if(!r) return;
+  await updateDoc(doc(db,'recipes',id),{isFavorite:!r.isFavorite});
+};
+window.toggleFavoriteFromView = async function() {
+  if (!viewRecipeId) return;
+  await toggleFavorite(viewRecipeId);
+  openViewRecipe(viewRecipeId); // refresh
+};
+
+window.addRecipeToGroceryList = async function() {
+  const r = recipes.find(r=>r.id===viewRecipeId); if(!r||!r.ingredients?.length) return;
+  closeViewRecipe();
+  let added=0;
+  for (const ing of r.ingredients) {
+    const dup = items.find(i=>i.recurring && i.name.toLowerCase()===ing.name.toLowerCase());
+    if (dup) {
+      await updateDoc(doc(db,'items',dup.id),{active:true});
+    } else {
+      await addDoc(collection(db,'items'),{
+        name:ing.name, category:ing.category||detectCat(ing.name),
+        recurring:false, active:true,
+        checked:{publix:false,walmart:false,traderjoes:false},
+        addedAt:serverTimestamp()
+      });
+    }
+    added++;
+  }
+  setView('list');
+  toast(`${added} ingredient${added!==1?'s':''} added to list!`);
+};
+
+window.openImportIntoRecipe = function() {
+  const r = recipes.find(r=>r.id===viewRecipeId);
+  closeViewRecipe();
+  openRecipeModal('library', r ? r.name : '');
+};
+
+window.deleteRecipeFromView = async function() {
+  const r = recipes.find(r=>r.id===viewRecipeId); if(!r) return;
+  // use existing confirm modal
+  document.getElementById('confirm-title').textContent = `Delete "${r.name}"?`;
+  document.getElementById('confirm-body').textContent = 'This recipe will be permanently removed from your library.';
+  document.getElementById('confirm-ok').onclick = async () => {
+    closeConfirm();
+    await deleteDoc(doc(db,'recipes',viewRecipeId));
+    closeViewRecipe();
+    toast(`"${r.name}" deleted`);
+  };
+  document.getElementById('view-recipe-modal').style.display = 'none';
+  document.getElementById('confirm-modal').style.display = 'flex';
+};
+
+// ════════════════════════════════════════════════
+// 📅 MEAL PLANNER
+// ════════════════════════════════════════════════
+
+function getWeekMonday(offset=0) {
+  const now = new Date();
+  const day = now.getDay();
+  const diff = day===0 ? -6 : 1-day;
+  const mon = new Date(now);
+  mon.setDate(now.getDate() + diff + offset*7);
+  mon.setHours(0,0,0,0);
+  return mon;
+}
+
+function getMealPlanId(offset=0) {
+  return getWeekMonday(offset).toISOString().slice(0,10);
+}
+
+function loadMealPlan(offset=0) {
+  weekOffset = offset;
+  if (unsubMealPlan) unsubMealPlan();
+  const planId = getMealPlanId(offset);
+  unsubMealPlan = onSnapshot(doc(db,'mealPlans',planId), snap => {
+    mealPlan = snap.exists()
+      ? { id:snap.id, ...snap.data() }
+      : { id:planId, weekOf:getWeekMonday(offset), meals:[] };
+    if (view==='mealplan') renderMealPlan();
+  });
+}
+
+window.navigateWeek = function(dir) { loadMealPlan(weekOffset+dir); };
+
+function renderMealPlan() {
+  const el = document.getElementById('mealplan-container');
+  if (!el) return;
+  const DAYS = ['Monday','Tuesday','Wednesday','Thursday','Friday','Saturday','Sunday'];
+  const monday = getWeekMonday(weekOffset);
+  const today  = new Date(); today.setHours(0,0,0,0);
+  const endSun = new Date(monday); endSun.setDate(monday.getDate()+6);
+  const fmt = d=>d.toLocaleDateString('en-US',{month:'short',day:'numeric'});
+  const meals = mealPlan?.meals||[];
+
+  let dayCells = DAYS.map((day,i)=>{
+    const meal = meals.find(m=>m.day===day);
+    const date = new Date(monday); date.setDate(monday.getDate()+i);
+    const isToday = date.getTime()===today.getTime();
+    return `<div class="day-cell${isToday?' today':''}">
+      <div class="day-header">
+        <span class="day-name">${day.slice(0,3)}</span>
+        <span class="day-date">${fmt(date)}</span>
+      </div>
+      ${meal
+        ? `<div class="day-recipe-assigned">
+             <span class="day-recipe-name">${esc(meal.recipeName)}</span>
+             <button class="day-clear-btn" onclick="clearMealDay('${day}')">✕</button>
+           </div>`
+        : `<button class="day-add-btn" onclick="openRecipePicker('${day}')">+ Add meal</button>`
+      }
+    </div>`;
+  }).join('');
+
+  const hasMeals = meals.length > 0;
+  el.innerHTML = `
+    <div class="week-nav">
+      <button class="week-nav-btn" onclick="navigateWeek(-1)">‹</button>
+      <div class="week-label">
+        <div class="week-range">${fmt(monday)} – ${fmt(endSun)}</div>
+        ${weekOffset===0?'<div class="week-current-badge">This Week</div>':''}
+      </div>
+      <button class="week-nav-btn" onclick="navigateWeek(1)">›</button>
+    </div>
+    <div class="day-cells">${dayCells}</div>
+    ${hasMeals
+      ? `<button class="btn-generate" onclick="generateGroceryList()">
+           🛒 Generate Grocery List
+           <span class="btn-generate-sub">${meals.length} meal${meals.length!==1?'s':''} this week</span>
+         </button>`
+      : `<div class="empty" style="padding:2rem 1rem">
+           <span class="empty-icon">📅</span>
+           <div class="empty-title">Plan your week</div>
+           <div class="empty-text">Assign recipes to each day, then generate your grocery list in one tap.</div>
+         </div>`
+    }`;
+}
+
+window.openRecipePicker = function(day) {
+  pickerDay = day;
+  document.getElementById('picker-title').textContent = 'Choose a meal for ' + day;
+  document.getElementById('picker-search').value = '';
+  renderPickerList('');
+  document.getElementById('recipe-picker-modal').style.display = 'flex';
+  setTimeout(()=>document.getElementById('picker-search').focus(),150);
+};
+window.closeRecipePicker = function() {
+  document.getElementById('recipe-picker-modal').style.display = 'none';
+  pickerDay = null;
+};
+
+function renderPickerList(query) {
+  const filtered = recipes
+    .filter(r=>!query || r.name.toLowerCase().includes(query.toLowerCase()))
+    .sort((a,b)=>{ if(a.isFavorite&&!b.isFavorite)return -1; if(!a.isFavorite&&b.isFavorite)return 1; return a.name.localeCompare(b.name); });
+  const el = document.getElementById('picker-list');
+  if (!filtered.length) {
+    el.innerHTML = `<div style="padding:1.5rem;text-align:center;color:var(--light);font-size:.85rem">No recipes found</div>`;
+    return;
+  }
+  el.innerHTML = filtered.map(r=>`
+    <div class="picker-item" onclick="selectRecipeForDay('${r.id}','${esc(r.name)}')">
+      <span class="picker-item-name">${esc(r.name)}</span>
+      <span class="picker-item-star${r.isFavorite?' on':''}">★</span>
+    </div>`).join('');
+}
+window.filterPickerRecipes = function(q) { renderPickerList(q); };
+
+window.selectRecipeForDay = async function(recipeId, recipeName) {
+  if (!pickerDay || !mealPlan) return;
+  closeRecipePicker();
+  const planId = mealPlan.id;
+  const meals = [...(mealPlan.meals||[]).filter(m=>m.day!==pickerDay),
+                  { day:pickerDay, recipeId, recipeName, servings:4 }];
+  await setDoc(doc(db,'mealPlans',planId),
+    { weekOf:getWeekMonday(weekOffset), meals, createdAt:serverTimestamp() },
+    { merge:true });
+};
+
+window.clearMealDay = async function(day) {
+  if (!mealPlan) return;
+  const meals = (mealPlan.meals||[]).filter(m=>m.day!==day);
+  await setDoc(doc(db,'mealPlans',mealPlan.id),
+    { weekOf:getWeekMonday(weekOffset), meals, createdAt:serverTimestamp() },
+    { merge:true });
+};
+
+window.generateGroceryList = async function() {
+  const meals = mealPlan?.meals||[];
+  if (!meals.length) { toast('No meals planned this week'); return; }
+
+  // Build ingredient text
+  let lines = [];
+  let hasAnyIngredients = false;
+  for (const meal of meals) {
+    const r = recipes.find(r=>r.id===meal.recipeId);
+    if (!r || !r.ingredients?.length) {
+      lines.push(`${meal.recipeName}: (no ingredients saved)`);
+      continue;
+    }
+    hasAnyIngredients = true;
+    lines.push(`${meal.recipeName}:`);
+    r.ingredients.forEach(i=>lines.push(`  - ${i.name}${i.qty?' ('+i.qty+')':''}`));
+  }
+
+  if (!hasAnyIngredients) {
+    toast('No recipes have ingredients yet — import them first');
+    return;
+  }
+  if (!claudeApiKey) {
+    toast('Claude API key needed — set it in Import Recipe');
+    setView('recipes');
+    return;
+  }
+
+  // Show confirm
+  document.getElementById('confirm-title').textContent = 'Generate grocery list?';
+  document.getElementById('confirm-body').textContent =
+    `Claude will consolidate ingredients from ${meals.length} recipe${meals.length!==1?'s':''} and add them to your shopping list.`;
+  document.getElementById('confirm-ok').onclick = async () => {
+    closeConfirm();
+    await doGenerateGroceryList(lines.join('\n'));
+  };
+  document.getElementById('confirm-modal').style.display = 'flex';
+};
+
+async function doGenerateGroceryList(ingredientText) {
+  toast('Generating grocery list…');
+  try {
+    const resp = await fetch('https://api.anthropic.com/v1/messages', {
+      method:'POST',
+      headers:{
+        'x-api-key':claudeApiKey,
+        'anthropic-version':'2023-06-01',
+        'content-type':'application/json',
+        'anthropic-dangerous-direct-browser-access':'true'
+      },
+      body:JSON.stringify({
+        model:'claude-haiku-4-5-20251001',
+        max_tokens:2048,
+        messages:[{
+          role:'user',
+          content:`Here are the ingredients for this week's meals. Consolidate duplicates, combine quantities, and return a final grocery list as a JSON array. Each item: {"name":"clean ingredient name","category":"CATEGORY"}. Use these category codes only: PRODUCE,BAKERY,DELI,MEAT,SEAFOOD,DAIRY_EGGS_CHEESE,FROZEN,CEREALS_COFFEE,CANNED_SOUPS,BAKING_SPICES_CONDIMENTS,PASTA_RICE_BEANS,BEVERAGES,SNACKS_CRACKERS_CANDY,CHIPS,HOUSEHOLD,LAUNDRY_CLEANING,TOILETRIES_PERSONAL_CARE,WINE_BEER,PHARMACY_MEDICINE,OILS_DRESSINGS,FLORAL.\n\n${ingredientText}`
+        }]
+      })
+    });
+    if (!resp.ok) throw new Error('API error ' + resp.status);
+    const data = await resp.json();
+    const text = data.content?.[0]?.text||'[]';
+    const match = text.match(/\[[\s\S]*\]/);
+    let grocery = [];
+    if (match) { try { grocery = JSON.parse(match[0]); } catch(_){} }
+    if (!grocery.length) { toast('Could not parse grocery list — try again'); return; }
+
+    let added=0;
+    for (const g of grocery) {
+      if (!g.name) continue;
+      const cat = (g.category && CATS[g.category]) ? g.category : detectCat(g.name);
+      const dup = items.find(i=>i.recurring&&i.name.toLowerCase()===g.name.toLowerCase());
+      if (dup) { await updateDoc(doc(db,'items',dup.id),{active:true}); }
+      else {
+        await addDoc(collection(db,'items'),{
+          name:g.name, category:cat, recurring:false, active:true,
+          checked:{publix:false,walmart:false,traderjoes:false},
+          addedAt:serverTimestamp()
+        });
+      }
+      added++;
+    }
+    setView('list');
+    toast(`${added} item${added!==1?'s':''} added to grocery list!`);
+  } catch(e) {
+    toast('Error: ' + (e.message||'Could not generate list'));
+  }
+}
 
 </script>
 </body>
