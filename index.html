@@ -2402,10 +2402,13 @@ function renderPickerList(query) {
     return;
   }
   el.innerHTML = filtered.map(r=>`
-    <div class="picker-item" onclick="selectRecipeForDay('${r.id}','${esc(r.name)}')">
+    <div class="picker-item" data-id="${r.id}" data-name="${esc(r.name)}">
       <span class="picker-item-name">${esc(r.name)}</span>
       <span class="picker-item-star${r.isFavorite?' on':''}">★</span>
     </div>`).join('');
+  el.querySelectorAll('.picker-item').forEach(item=>{
+    item.addEventListener('click', ()=>selectRecipeForDay(item.dataset.id, item.dataset.name));
+  });
 }
 window.filterPickerRecipes = function(q) { renderPickerList(q); };
 
