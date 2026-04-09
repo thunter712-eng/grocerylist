@@ -888,6 +888,72 @@
     .btn-danger:active { background: #F9D4D4; }
 
     /* ════════════════ MEAL PLANNER ════════════════ */
+    .planner-subtabs {
+      display: flex; gap: .35rem; margin-bottom: 1.25rem;
+      background: var(--bg); border-radius: 12px; padding: .25rem;
+    }
+    .planner-subtab {
+      flex: 1; padding: .5rem .25rem; border: none; border-radius: 9px;
+      background: transparent; font-size: .82rem; font-weight: 600;
+      color: var(--light); cursor: pointer; transition: background .15s, color .15s;
+      font-family: inherit;
+    }
+    .planner-subtab.active {
+      background: var(--white); color: var(--forest);
+      box-shadow: 0 1px 4px rgba(0,0,0,.1);
+    }
+
+    /* History */
+    .history-week {
+      background: var(--white); border-radius: 14px;
+      margin-bottom: .75rem; overflow: hidden;
+    }
+    .history-week-header {
+      padding: .6rem 1rem; background: var(--mint-faint);
+      font-size: .78rem; font-weight: 700; color: var(--forest);
+      letter-spacing: .04em; text-transform: uppercase;
+      display: flex; justify-content: space-between; align-items: center;
+    }
+    .history-week-badge {
+      background: var(--forest); color: #fff;
+      font-size: .65rem; padding: .15rem .45rem; border-radius: 6px;
+    }
+    .history-meal-row {
+      display: flex; align-items: baseline; gap: .6rem;
+      padding: .45rem 1rem; border-bottom: 1px solid var(--border);
+      font-size: .85rem;
+    }
+    .history-meal-row:last-child { border-bottom: none; }
+    .history-day-name { width: 2.8rem; flex-shrink: 0; font-weight: 600; color: var(--light); font-size: .75rem; text-transform: uppercase; }
+    .history-recipe-name { color: var(--text); }
+    .history-empty-day { color: var(--light); font-style: italic; }
+
+    /* Insights */
+    .insight-section { margin-bottom: 1.5rem; }
+    .insight-section-title {
+      font-size: .72rem; font-weight: 700; color: var(--light);
+      text-transform: uppercase; letter-spacing: .08em;
+      margin-bottom: .6rem; padding: 0 .1rem;
+    }
+    .insight-row {
+      display: flex; align-items: center; gap: .75rem;
+      background: var(--white); border-radius: 12px;
+      padding: .65rem .9rem; margin-bottom: .4rem;
+    }
+    .insight-recipe-name { flex: 1; font-size: .9rem; font-weight: 500; color: var(--text); }
+    .insight-count {
+      background: var(--mint-faint); color: var(--forest);
+      font-size: .75rem; font-weight: 700; padding: .2rem .55rem;
+      border-radius: 20px; flex-shrink: 0;
+    }
+    .insight-last {
+      font-size: .75rem; color: var(--light); flex-shrink: 0; text-align: right;
+    }
+    .insight-empty {
+      text-align: center; color: var(--light); font-size: .85rem;
+      padding: 2rem 1rem; font-style: italic;
+    }
+
     .week-nav {
       display: flex; align-items: center;
       justify-content: space-between;
@@ -1396,7 +1462,7 @@
 import { initializeApp }
   from "https://www.gstatic.com/firebasejs/10.12.0/firebase-app.js";
 import { getFirestore, collection, addDoc, onSnapshot,
-  updateDoc, deleteDoc, doc, serverTimestamp, setDoc, getDoc }
+  updateDoc, deleteDoc, doc, serverTimestamp, setDoc, getDoc, getDocs }
   from "https://www.gstatic.com/firebasejs/10.12.0/firebase-firestore.js";
 
 // ════════════════════════════════════════════════
@@ -1663,6 +1729,8 @@ let unsubRecipes = null;
 let unsubMealPlan= null;
 let recipesSeeded= false;
 let recipeImportMode = 'list'; // 'list' | 'library'
+let plannerTab = 'week';       // 'week' | 'history' | 'insights'
+let allMealPlansCache = null;
 
 // ── AUTH ──
 async function checkLogin() {
@@ -2421,6 +2489,25 @@ window.navigateWeek = function(dir) { loadMealPlan(weekOffset+dir); };
 function renderMealPlan() {
   const el = document.getElementById('mealplan-container');
   if (!el) return;
+
+  el.innerHTML = `
+    <div class="planner-subtabs">
+      <button class="planner-subtab${plannerTab==='week'?' active':''}" onclick="setPlannerTab('week')">This Week</button>
+      <button class="planner-subtab${plannerTab==='history'?' active':''}" onclick="setPlannerTab('history')">History</button>
+      <button class="planner-subtab${plannerTab==='insights'?' active':''}" onclick="setPlannerTab('insights')">Insights</button>
+    </div>
+    <div id="planner-content"></div>`;
+
+  if (plannerTab === 'week')         renderWeekContent();
+  else if (plannerTab === 'history') renderHistoryContent();
+  else                               renderInsightsContent();
+}
+
+window.setPlannerTab = function(t) { plannerTab = t; renderMealPlan(); };
+
+function renderWeekContent() {
+  const el = document.getElementById('planner-content');
+  if (!el) return;
   const DAYS = ['Monday','Tuesday','Wednesday','Thursday','Friday','Saturday','Sunday'];
   const monday = getWeekMonday(weekOffset);
   const today  = new Date(); today.setHours(0,0,0,0);
@@ -2514,6 +2601,7 @@ window.selectRecipeForDay = async function(recipeId, recipeName) {
   await setDoc(doc(db,'mealPlans',planId),
     { weekOf:getWeekMonday(weekOffset), meals, createdAt:serverTimestamp() },
     { merge:true });
+  allMealPlansCache = null;
 };
 
 window.clearMealDay = async function(day) {
@@ -2522,7 +2610,134 @@ window.clearMealDay = async function(day) {
   await setDoc(doc(db,'mealPlans',mealPlan.id),
     { weekOf:getWeekMonday(weekOffset), meals, createdAt:serverTimestamp() },
     { merge:true });
+  allMealPlansCache = null; // invalidate cache after changes
 };
+
+// ── MEAL PLAN HISTORY & INSIGHTS ─────────────────────────────────────────────
+
+async function loadAllMealPlans() {
+  if (allMealPlansCache) return allMealPlansCache;
+  const snap = await getDocs(collection(db, 'mealPlans'));
+  allMealPlansCache = snap.docs
+    .map(d => ({ id: d.id, ...d.data() }))
+    .filter(p => p.weekOf && (p.meals||[]).length > 0)
+    .sort((a,b) => b.weekOf.localeCompare(a.weekOf)); // newest first
+  return allMealPlansCache;
+}
+
+async function renderHistoryContent() {
+  const el = document.getElementById('planner-content');
+  if (!el) return;
+  el.innerHTML = '<div style="text-align:center;padding:2rem;color:var(--light);font-size:.85rem">Loading…</div>';
+  const plans = await loadAllMealPlans();
+  const DAYS = ['Monday','Tuesday','Wednesday','Thursday','Friday','Saturday','Sunday'];
+  const fmt = d => new Date(d+'T12:00:00').toLocaleDateString('en-US',{month:'short',day:'numeric'});
+  const currentWeekId = getMealPlanId(0);
+
+  if (!plans.length) {
+    el.innerHTML = '<div class="insight-empty">No meal plan history yet.<br>Start planning weeks to build your history.</div>';
+    return;
+  }
+
+  el.innerHTML = plans.map(plan => {
+    const isCurrent = plan.id === currentWeekId;
+    const weekStart = plan.weekOf;
+    const weekEnd   = new Date(weekStart+'T12:00:00');
+    weekEnd.setDate(weekEnd.getDate()+6);
+    const meals = plan.meals || [];
+
+    const rows = DAYS.map(day => {
+      const meal = meals.find(m => m.day === day);
+      return `<div class="history-meal-row">
+        <span class="history-day-name">${day.slice(0,3)}</span>
+        ${meal
+          ? `<span class="history-recipe-name">${esc(meal.recipeName)}</span>`
+          : `<span class="history-empty-day">—</span>`}
+      </div>`;
+    }).join('');
+
+    return `<div class="history-week">
+      <div class="history-week-header">
+        <span>${fmt(weekStart)} – ${fmt(weekEnd.toISOString().slice(0,10))}</span>
+        ${isCurrent ? '<span class="history-week-badge">This Week</span>' : ''}
+      </div>
+      ${rows}
+    </div>`;
+  }).join('');
+}
+
+async function renderInsightsContent() {
+  const el = document.getElementById('planner-content');
+  if (!el) return;
+  el.innerHTML = '<div style="text-align:center;padding:2rem;color:var(--light);font-size:.85rem">Loading…</div>';
+  const plans = await loadAllMealPlans();
+
+  if (!plans.length) {
+    el.innerHTML = '<div class="insight-empty">No meal history yet.<br>Plan a few weeks to see insights.</div>';
+    return;
+  }
+
+  // Aggregate frequency and last-eaten date per recipe
+  const stats = {}; // recipeName → { count, lastWeekOf }
+  plans.forEach(plan => {
+    (plan.meals||[]).forEach(meal => {
+      if (!meal.recipeName) return;
+      const key = meal.recipeName;
+      if (!stats[key]) stats[key] = { name: meal.recipeName, count: 0, lastWeekOf: '' };
+      stats[key].count++;
+      if (plan.weekOf > stats[key].lastWeekOf) stats[key].lastWeekOf = plan.weekOf;
+    });
+  });
+
+  const allStats = Object.values(stats);
+  const today = new Date(); today.setHours(0,0,0,0);
+  const msPerWeek = 7 * 24 * 3600 * 1000;
+  const cutoff = new Date(today.getTime() - 28 * 24 * 3600 * 1000); // 4 weeks ago
+
+  // Regulars: min 2 appearances, sorted by count desc
+  const regulars = allStats
+    .filter(s => s.count >= 2)
+    .sort((a,b) => b.count - a.count)
+    .slice(0, 12);
+
+  // Due for a comeback: eaten before but not in last 4 weeks, sorted by longest gap first
+  const comeback = allStats
+    .filter(s => new Date(s.lastWeekOf+'T12:00:00') < cutoff)
+    .sort((a,b) => a.lastWeekOf.localeCompare(b.lastWeekOf))
+    .slice(0, 12);
+
+  const weeksAgo = weekOf => {
+    const d = new Date(weekOf+'T12:00:00');
+    const w = Math.round((today - d) / msPerWeek);
+    return w === 1 ? '1 week ago' : `${w} weeks ago`;
+  };
+
+  const regularRows = regulars.length
+    ? regulars.map(s => `
+        <div class="insight-row">
+          <span class="insight-recipe-name">${esc(s.name)}</span>
+          <span class="insight-count">${s.count}×</span>
+        </div>`).join('')
+    : '<div class="insight-empty">Plan more weeks to see your regulars.</div>';
+
+  const comebackRows = comeback.length
+    ? comeback.map(s => `
+        <div class="insight-row">
+          <span class="insight-recipe-name">${esc(s.name)}</span>
+          <span class="insight-last">${weeksAgo(s.lastWeekOf)}</span>
+        </div>`).join('')
+    : '<div class="insight-empty" style="padding:1rem">Everything is in the recent rotation!</div>';
+
+  el.innerHTML = `
+    <div class="insight-section">
+      <div class="insight-section-title">Regulars</div>
+      ${regularRows}
+    </div>
+    <div class="insight-section">
+      <div class="insight-section-title">Due for a comeback</div>
+      ${comebackRows}
+    </div>`;
+}
 
 window.generateGroceryList = async function() {
   const meals = mealPlan?.meals||[];
