@@ -996,7 +996,7 @@
 import { initializeApp }
   from "https://www.gstatic.com/firebasejs/10.12.0/firebase-app.js";
 import { getFirestore, collection, addDoc, onSnapshot,
-  updateDoc, deleteDoc, doc, serverTimestamp }
+  updateDoc, deleteDoc, doc, serverTimestamp, setDoc, getDoc }
   from "https://www.gstatic.com/firebasejs/10.12.0/firebase-firestore.js";
 
 // ════════════════════════════════════════════════
@@ -1246,11 +1246,12 @@ function detectCat(name) {
 }
 
 // ── STATE ──
-let store  = 'publix';
-let view   = 'list';
-let items  = [];
-let editId = null;
-let unsub  = null;
+let store       = 'publix';
+let view        = 'list';
+let items       = [];
+let editId      = null;
+let unsub       = null;
+let claudeApiKey = '';
 
 // ── AUTH ──
 async function checkLogin() {
@@ -1285,8 +1286,13 @@ if (localStorage.getItem('hgl')==='1') {
 }
 
 // ── FIREBASE LISTENER ──
-function startApp() {
+async function startApp() {
   if (unsub) unsub();
+  // Load shared config (Claude API key)
+  try {
+    const cfgDoc = await getDoc(doc(db,'config','app'));
+    if (cfgDoc.exists()) claudeApiKey = cfgDoc.data().claudeKey || '';
+  } catch(_) {}
   unsub = onSnapshot(collection(db,'items'), snap => {
     items = snap.docs.map(d=>({id:d.id,...d.data()}));
     render();
@@ -1556,9 +1562,8 @@ function showRecipeStep(n) {
 }
 
 function updateApiKeyStatus() {
-  const key = localStorage.getItem('claude_api_key');
-  const el  = document.getElementById('api-key-status');
-  if (key) {
+  const el = document.getElementById('api-key-status');
+  if (claudeApiKey) {
     el.textContent = 'Set ✓';
     el.className   = 'api-key-status set';
   } else {
@@ -1593,23 +1598,24 @@ window.toggleApiKeyInput = function() {
   const shown = wrap.style.display !== 'none';
   wrap.style.display = shown ? 'none' : 'block';
   if (!shown) {
-    const key = localStorage.getItem('claude_api_key');
-    if (key) document.getElementById('api-key-input').value = key;
+    if (claudeApiKey) document.getElementById('api-key-input').value = claudeApiKey;
     setTimeout(()=>document.getElementById('api-key-input').focus(), 100);
   }
 };
 
-window.saveApiKey = function() {
+window.saveApiKey = async function() {
   const key = document.getElementById('api-key-input').value.trim();
   if (!key) return;
-  localStorage.setItem('claude_api_key', key);
+  claudeApiKey = key;
+  await setDoc(doc(db,'config','app'), { claudeKey: key }, { merge: true });
   document.getElementById('api-key-input-wrap').style.display = 'none';
   updateApiKeyStatus();
-  toast('API key saved!');
+  toast('API key saved — works on all devices!');
 };
 
-window.clearApiKey = function() {
-  localStorage.removeItem('claude_api_key');
+window.clearApiKey = async function() {
+  claudeApiKey = '';
+  await setDoc(doc(db,'config','app'), { claudeKey: '' }, { merge: true });
   document.getElementById('api-key-input').value = '';
   document.getElementById('api-key-input-wrap').style.display = 'none';
   updateApiKeyStatus();
@@ -1617,7 +1623,7 @@ window.clearApiKey = function() {
 };
 
 window.extractIngredients = async function() {
-  const apiKey = localStorage.getItem('claude_api_key');
+  const apiKey = claudeApiKey;
   if (!apiKey) {
     document.getElementById('api-key-input-wrap').style.display = 'block';
     setTimeout(()=>document.getElementById('api-key-input').focus(), 100);
