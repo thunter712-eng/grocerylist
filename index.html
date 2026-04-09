@@ -1123,7 +1123,7 @@ function renderList() {
       html += `<div class="item-row${c?' done':''}">
         <button class="check-btn${c?' done':''}" onclick="toggle('${item.id}')">${c?'✓':''}</button>
         <span class="item-name">${esc(item.name)}</span>
-        <button class="del-btn" onclick="del('${item.id}')">✕</button>
+        <button class="del-btn" onclick="removeFromList('${item.id}')">✕</button>
       </div>`;
     });
     html += '</div></div>';
@@ -1141,7 +1141,7 @@ function renderList() {
         <button class="check-btn${c?' done':''}" onclick="toggle('${item.id}')">${c?'✓':''}</button>
         <span class="item-name">${esc(item.name)}</span>
         <span style="font-size:.7rem;color:var(--light);margin-right:.25rem">${CATS[item.category]||''}</span>
-        <button class="del-btn" onclick="del('${item.id}')">✕</button>
+        <button class="del-btn" onclick="removeFromList('${item.id}')">✕</button>
       </div>`;
     });
     html += '</div></div>';
@@ -1184,6 +1184,18 @@ function renderMaster() {
 }
 
 // ── ITEM ACTIONS ──
+window.removeFromList = async function(id) {
+  const it = items.find(i=>i.id===id); if(!it) return;
+  if (it.recurring) {
+    // Keep on master list, just remove from active shopping list
+    await updateDoc(doc(db,'items',id), {active: false});
+    toast(`${it.name} removed from list`);
+  } else {
+    // One-off item — delete entirely
+    await deleteDoc(doc(db,'items',id));
+    toast(`${it.name} removed`);
+  }
+};
 window.toggle = async function(id) {
   const it = items.find(i=>i.id===id); if(!it) return;
   const ch = {...(it.checked||{})};
