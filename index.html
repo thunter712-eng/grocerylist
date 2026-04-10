@@ -869,6 +869,49 @@
     .nav-tabs .nav-tab { font-size: .72rem; padding: .7rem 0; letter-spacing: 0; }
 
     /* ════════════════ RECIPE LIBRARY ════════════════ */
+    .recipe-search-wrap { position: relative; margin-bottom: .875rem; }
+    .recipe-search {
+      width: 100%; padding: .7rem 1rem .7rem 2.4rem;
+      border: 1.5px solid var(--border); border-radius: 12px;
+      font-family: inherit; font-size: .9rem; color: var(--text);
+      background: var(--white); outline: none;
+      transition: border-color .2s;
+    }
+    .recipe-search:focus { border-color: var(--mint); }
+    .recipe-search-wrap::before {
+      content: '🔍'; position: absolute; left: .75rem; top: 50%;
+      transform: translateY(-50%); font-size: .85rem; pointer-events: none;
+    }
+    .chapter-pills {
+      display: flex; gap: .4rem; overflow-x: auto;
+      padding-bottom: .5rem; margin-bottom: .875rem;
+      -webkit-overflow-scrolling: touch; scrollbar-width: none;
+    }
+    .chapter-pills::-webkit-scrollbar { display: none; }
+    .chapter-pill {
+      flex-shrink: 0; padding: .4rem .85rem;
+      border: 1.5px solid var(--border); border-radius: 20px;
+      background: var(--white); font-family: inherit;
+      font-size: .78rem; font-weight: 600; color: var(--mid);
+      cursor: pointer; white-space: nowrap;
+      transition: background .15s, border-color .15s, color .15s;
+    }
+    .chapter-pill.active {
+      background: var(--forest); border-color: var(--forest);
+      color: white;
+    }
+    .chapter-header {
+      font-size: .72rem; font-weight: 700; color: var(--light);
+      text-transform: uppercase; letter-spacing: .1em;
+      padding: 1.1rem 0 .4rem;
+    }
+    .chapter-header:first-child { padding-top: 0; }
+    .recipe-chapter-badge {
+      display: inline-block; font-size: .65rem; font-weight: 600;
+      color: var(--forest-lite); background: var(--mint-faint);
+      border-radius: 6px; padding: .1rem .4rem; margin-top: .2rem;
+    }
+
     .recipe-row {
       display: flex; align-items: center;
       padding: .9rem 1rem;
@@ -1647,6 +1690,33 @@ const CATS = {
   OILS_DRESSINGS:'Oils & Dressings', FLORAL:'Floral',
 };
 
+const CHAPTERS = [
+  { id:'chicken',    label:'Chicken',            emoji:'🐔' },
+  { id:'beef',       label:'Beef & Pork',         emoji:'🥩' },
+  { id:'seafood',    label:'Seafood',             emoji:'🐟' },
+  { id:'pasta',      label:'Pasta & Rice',        emoji:'🍝' },
+  { id:'casseroles', label:'Casseroles & Soups',  emoji:'🥘' },
+  { id:'mexican',    label:'Mexican & Italian',   emoji:'🌮' },
+  { id:'breakfast',  label:'Breakfast',           emoji:'🥞' },
+  { id:'pizza',      label:'Pizza & Sandwiches',  emoji:'🍕' },
+  { id:'sides',      label:'Sides & Salads',      emoji:'🥗' },
+  { id:'other',      label:'Other',               emoji:'📦' },
+];
+
+function detectChapter(name='', ingredients=[]) {
+  const t = (name + ' ' + (ingredients||[]).map(i=>i.name||'').join(' ')).toLowerCase();
+  if (/\bchicken\b|turkey|poultry/.test(t))                                              return 'chicken';
+  if (/\bbeef\b|steak|burger|meatloaf|meatball|\bpork\b|sausage|brisket|ground beef|drip beef|bacon/.test(t)) return 'beef';
+  if (/salmon|tilapia|shrimp|\bfish\b|seafood|tuna|\bcod\b|crab|lobster/.test(t))        return 'seafood';
+  if (/pasta|spaghetti|tortellini|alfredo|noodle|macaroni|lasagna|penne|fettuccine|linguine|rice bowl/.test(t)) return 'pasta';
+  if (/casserole|soup|stew|chili|chowder/.test(t))                                       return 'casseroles';
+  if (/taco|burrito|enchilada|quesadilla|shawarma|gyro|pita|italian|parmesan/.test(t))   return 'mexican';
+  if (/\bpizza\b|sandwich|sub wrap/.test(t))                                             return 'pizza';
+  if (/breakfast|pancake|waffle|omelette|brunch|french toast/.test(t))                  return 'breakfast';
+  if (/salad|side dish|coleslaw|roasted veggies/.test(t))                               return 'sides';
+  return 'other';
+}
+
 const KW = {
   PRODUCE:['apple','apples','banana','bananas','orange','oranges','grape','grapes','lettuce',
     'spinach','kale','broccoli','carrot','carrots','celery','tomato','tomatoes','onion','onions',
@@ -2159,6 +2229,9 @@ function esc(s){ return String(s).replace(/&/g,'&amp;').replace(/</g,'&lt;').rep
 // 🍽️ RECIPE IMPORT
 // ════════════════════════════════════════════════
 let recipeTab = 'text';
+let recipeChapterFilter = 'all';
+let recipeSearchQuery   = '';
+let selectedChapter     = 'other';
 let extractedIngredients = [];
 let extractedInstructions = '';
 let selectedPhotos = []; // array of base64 data URLs
@@ -2421,7 +2494,19 @@ function renderIngredientPreview() {
     `${selCount} selected`;
   document.getElementById('ing-add-btn').textContent = 'Save Recipe';
 
-  document.getElementById('ing-list').innerHTML = extractedIngredients.map((ing,idx)=>`
+  // Auto-detect chapter from recipe name + ingredients
+  const recipeName = document.getElementById('recipe-lib-name')?.value || '';
+  selectedChapter = detectChapter(recipeName, extractedIngredients);
+
+  // Chapter selector injected above ingredient list
+  const chapterSelect = `<div style="margin-bottom:.75rem">
+    <label class="form-label">Chapter</label>
+    <select class="form-input" id="ing-chapter-select" onchange="selectedChapter=this.value" style="padding:.5rem .75rem">
+      ${CHAPTERS.map(c=>`<option value="${c.id}"${selectedChapter===c.id?' selected':''}>${c.emoji} ${c.label}</option>`).join('')}
+    </select>
+  </div>`;
+
+  document.getElementById('ing-list').innerHTML = chapterSelect + extractedIngredients.map((ing,idx)=>`
     <div class="ing-item" onclick="toggleIngredient(${idx})">
       <div class="ing-check${ing.selected?' on':''}">✓</div>
       <span class="ing-label">${esc(ing.name)}</span>
@@ -2458,14 +2543,15 @@ window.addSelectedIngredients = async function() {
   closeRecipeModal();
   const targetId = viewRecipeId;
   const ingredients = sel.map(i=>({ name:i.name, qty:i.qty||'', category:i.cat }));
+  const chapter = selectedChapter || detectChapter(recipeName, ingredients);
   if (targetId) {
-    await updateDoc(doc(db,'recipes',targetId),{ name:recipeName, ingredients, instructions:extractedInstructions, sourceUrl:'', servings:4 });
+    await updateDoc(doc(db,'recipes',targetId),{ name:recipeName, ingredients, instructions:extractedInstructions, chapter, sourceUrl:'', servings:4 });
     toast('Recipe updated!');
     viewRecipeId = null;
   } else {
     await addDoc(collection(db,'recipes'),{
       name:recipeName, ingredients, instructions:extractedInstructions,
-      sourceUrl:'', servings:4, isFavorite:false, createdAt:serverTimestamp()
+      chapter, sourceUrl:'', servings:4, isFavorite:false, createdAt:serverTimestamp()
     });
     toast(`"${recipeName}" saved to Recipe Library!`);
   }
@@ -2493,36 +2579,87 @@ async function seedDefaultRecipes() {
   }
 }
 
+function getRecipeChapter(r) {
+  return r.chapter || detectChapter(r.name, r.ingredients);
+}
+
+function renderRecipeRow(r) {
+  const cnt = r.ingredients?.length||0;
+  const ch  = CHAPTERS.find(c=>c.id===getRecipeChapter(r));
+  return `<div class="recipe-row" onclick="openViewRecipe('${r.id}')">
+    <div class="recipe-info">
+      <div class="recipe-name">${esc(r.name)}</div>
+      <div class="recipe-meta">
+        ${cnt ? cnt+' ingredient'+(cnt!==1?'s':'') : 'No ingredients yet'}
+        ${recipeChapterFilter==='all' && ch ? `<span class="recipe-chapter-badge">${ch.emoji} ${ch.label}</span>` : ''}
+      </div>
+    </div>
+    <button class="star-btn${r.isFavorite?' on':''}" onclick="event.stopPropagation();toggleFavorite('${r.id}')">★</button>
+  </div>`;
+}
+
 function renderRecipes() {
   const el = document.getElementById('recipes-container');
   if (!el) return;
-  const sorted = [...recipes].sort((a,b)=>{
+
+  const q = recipeSearchQuery.toLowerCase();
+  let filtered = recipes.filter(r => {
+    const matchSearch  = !q || r.name.toLowerCase().includes(q);
+    const matchChapter = recipeChapterFilter==='all' || getRecipeChapter(r)===recipeChapterFilter;
+    return matchSearch && matchChapter;
+  });
+  filtered.sort((a,b)=>{
     if (a.isFavorite && !b.isFavorite) return -1;
     if (!a.isFavorite && b.isFavorite) return 1;
     return a.name.localeCompare(b.name);
   });
 
-  let html = `<button class="btn-add-recipe" onclick="openRecipeModal()">+ Add Recipe</button>`;
-  if (!sorted.length) {
-    html += `<div class="empty"><span class="empty-icon">📖</span>
-      <div class="empty-title">No recipes yet</div>
-      <div class="empty-text">Tap above to save your first recipe.</div></div>`;
-  } else {
-    html += `<div class="item-list">`;
-    sorted.forEach(r=>{
-      const cnt = r.ingredients?.length||0;
-      html += `<div class="recipe-row" onclick="openViewRecipe('${r.id}')">
-        <div class="recipe-info">
-          <div class="recipe-name">${esc(r.name)}</div>
-          <div class="recipe-meta">${cnt ? cnt+' ingredient'+(cnt!==1?'s':'') : 'No ingredients yet — tap to import'}</div>
-        </div>
-        <button class="star-btn${r.isFavorite?' on':''}" onclick="event.stopPropagation();toggleFavorite('${r.id}')">★</button>
-      </div>`;
-    });
-    html += `</div>`;
+  // Chapter pills
+  const pillsHtml = `<div class="chapter-pills">
+    <button class="chapter-pill${recipeChapterFilter==='all'?' active':''}" onclick="setRecipeChapter('all')">All</button>
+    ${CHAPTERS.map(c=>`<button class="chapter-pill${recipeChapterFilter===c.id?' active':''}" onclick="setRecipeChapter('${c.id}')">${c.emoji} ${c.label}</button>`).join('')}
+  </div>`;
+
+  const searchHtml = `<div class="recipe-search-wrap">
+    <input class="recipe-search" id="recipe-search-input" placeholder="Search recipes…"
+      value="${esc(recipeSearchQuery)}" oninput="filterRecipes(this.value)">
+  </div>`;
+
+  const addBtn = `<button class="btn-add-recipe" onclick="openRecipeModal()">+ Add Recipe</button>`;
+
+  if (!filtered.length) {
+    el.innerHTML = searchHtml + pillsHtml + addBtn + `<div class="empty">
+      <span class="empty-icon">📖</span>
+      <div class="empty-title">${recipes.length ? 'No recipes found' : 'No recipes yet'}</div>
+      <div class="empty-text">${recipes.length ? 'Try a different search or chapter.' : 'Tap above to save your first recipe.'}</div>
+    </div>`;
+    return;
   }
-  el.innerHTML = html;
+
+  let listHtml = '';
+  if (recipeChapterFilter === 'all' && !q) {
+    // Grouped by chapter
+    CHAPTERS.forEach(ch => {
+      const group = filtered.filter(r => getRecipeChapter(r) === ch.id);
+      if (!group.length) return;
+      listHtml += `<div class="chapter-header">${ch.emoji} ${ch.label}</div>
+        <div class="item-list">${group.map(renderRecipeRow).join('')}</div>`;
+    });
+  } else {
+    listHtml = `<div class="item-list">${filtered.map(renderRecipeRow).join('')}</div>`;
+  }
+
+  el.innerHTML = searchHtml + pillsHtml + addBtn + listHtml;
 }
+
+window.setRecipeChapter = function(id) {
+  recipeChapterFilter = id;
+  renderRecipes();
+};
+window.filterRecipes = function(q) {
+  recipeSearchQuery = q;
+  renderRecipes();
+};
 
 window.openViewRecipe = function(id) {
   viewRecipeId = id;
@@ -2531,8 +2668,10 @@ window.openViewRecipe = function(id) {
   document.getElementById('vr-name').textContent = r.name;
   document.getElementById('vr-star').className = 'star-btn' + (r.isFavorite?' on':'');
   const cnt = r.ingredients?.length||0;
+  const ch = CHAPTERS.find(c=>c.id===getRecipeChapter(r));
   document.getElementById('vr-meta').textContent =
-    cnt + ' ingredient' + (cnt!==1?'s':'') + (r.sourceUrl ? ' · ' + r.sourceUrl : '');
+    (ch ? ch.emoji + ' ' + ch.label + ' · ' : '') +
+    cnt + ' ingredient' + (cnt!==1?'s':'');
   document.getElementById('vr-add-btn').textContent =
     cnt ? 'Add to Grocery List' : 'No ingredients yet';
   document.getElementById('vr-add-btn').disabled = !cnt;
