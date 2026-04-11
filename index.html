@@ -1550,6 +1550,9 @@
         <button class="btn-cancel" onclick="closeRecipeModal()">Cancel</button>
         <button class="btn-save" onclick="extractIngredients()">Extract Ingredients →</button>
       </div>
+      <div style="text-align:center;margin-top:.5rem">
+        <button onclick="saveRecipeNameOnly()" style="background:none;border:none;color:var(--light);font-size:.78rem;cursor:pointer;text-decoration:underline;padding:.25rem">Save without ingredients (e.g. YoYo, Leftovers)</button>
+      </div>
     </div>
 
     <!-- Step 2: Loading -->
@@ -2607,9 +2610,21 @@ window.toggleAllIngredients = function() {
 
 window.goBackToInput = function() { showRecipeStep(1); };
 
+window.saveRecipeNameOnly = async function() {
+  const recipeName = document.getElementById('recipe-lib-name').value.trim();
+  if (!recipeName) { toast('Enter a recipe name first'); document.getElementById('recipe-lib-name').focus(); return; }
+  closeRecipeModal();
+  const chapter = detectChapter(recipeName, []);
+  await addDoc(collection(db,'recipes'),{
+    name:recipeName, ingredients:[], instructions:'',
+    chapter, sourceUrl:'', servings:4, isFavorite:false, createdAt:serverTimestamp()
+  });
+  toast(`"${recipeName}" saved to Recipe Library!`);
+  setView('recipes');
+};
+
 window.addSelectedIngredients = async function() {
   const sel = extractedIngredients.filter(i=>i.selected);
-  if (!sel.length) { toast('No items selected'); return; }
 
   const recipeName = document.getElementById('recipe-lib-name').value.trim();
   if (!recipeName) {
