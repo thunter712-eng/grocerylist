@@ -1608,7 +1608,7 @@
   <div class="modal">
     <div class="modal-handle"></div>
     <div class="modal-title" id="picker-title">Choose a Meal</div>
-    <input type="text" class="picker-search" id="picker-search" placeholder="Search recipes…" oninput="filterPickerRecipes(this.value)" autocomplete="off">
+    <input type="text" class="picker-search" id="picker-search" placeholder="Search recipes or type any meal name…" oninput="filterPickerRecipes(this.value)" autocomplete="off">
     <div class="picker-list" id="picker-list"></div>
     <div style="margin-top:.875rem">
       <button class="btn-cancel" style="width:100%;padding:.9rem" onclick="closeRecipePicker()">Cancel</button>
@@ -2981,20 +2981,29 @@ window.closeRecipePicker = function() {
 };
 
 function renderPickerList(query) {
+  const q = query.trim();
   const filtered = recipes
-    .filter(r=>!query || r.name.toLowerCase().includes(query.toLowerCase()))
+    .filter(r=>!q || r.name.toLowerCase().includes(q.toLowerCase()))
     .sort((a,b)=>{ if(a.isFavorite&&!b.isFavorite)return -1; if(!a.isFavorite&&b.isFavorite)return 1; return a.name.localeCompare(b.name); });
   const el = document.getElementById('picker-list');
+
+  const customHtml = q ? `<div class="picker-item picker-custom" data-custom="${esc(q)}">
+    <span class="picker-item-name" style="color:var(--mint-dark)">📝 Use "${esc(q)}"</span>
+  </div>` : '';
+
   if (!filtered.length) {
-    el.innerHTML = `<div style="padding:1.5rem;text-align:center;color:var(--light);font-size:.85rem">No recipes found</div>`;
-    return;
+    el.innerHTML = customHtml || `<div style="padding:1.5rem;text-align:center;color:var(--light);font-size:.85rem">No recipes found</div>`;
+  } else {
+    el.innerHTML = customHtml + filtered.map(r=>`
+      <div class="picker-item" data-id="${r.id}" data-name="${esc(r.name)}">
+        <span class="picker-item-name">${esc(r.name)}</span>
+        <span class="picker-item-star${r.isFavorite?' on':''}">★</span>
+      </div>`).join('');
   }
-  el.innerHTML = filtered.map(r=>`
-    <div class="picker-item" data-id="${r.id}" data-name="${esc(r.name)}">
-      <span class="picker-item-name">${esc(r.name)}</span>
-      <span class="picker-item-star${r.isFavorite?' on':''}">★</span>
-    </div>`).join('');
-  el.querySelectorAll('.picker-item').forEach(item=>{
+  el.querySelectorAll('.picker-item.picker-custom').forEach(item=>{
+    item.addEventListener('click', ()=>selectCustomMealForDay(item.dataset.custom));
+  });
+  el.querySelectorAll('.picker-item:not(.picker-custom)').forEach(item=>{
     item.addEventListener('click', ()=>selectRecipeForDay(item.dataset.id, item.dataset.name));
   });
 }
@@ -3007,6 +3016,19 @@ window.selectRecipeForDay = async function(recipeId, recipeName) {
   const planId = mealPlan.id;
   const meals = [...(mealPlan.meals||[]).filter(m=>m.day!==day),
                   { day, recipeId, recipeName, servings:4 }];
+  await setDoc(doc(db,'mealPlans',planId),
+    { weekOf:getWeekMonday(weekOffset), meals, createdAt:serverTimestamp() },
+    { merge:true });
+  allMealPlansCache = null;
+};
+
+window.selectCustomMealForDay = async function(name) {
+  if (!pickerDay || !mealPlan) return;
+  const day = pickerDay;
+  closeRecipePicker();
+  const planId = mealPlan.id;
+  const meals = [...(mealPlan.meals||[]).filter(m=>m.day!==day),
+                  { day, recipeId: null, recipeName: name, servings: 4 }];
   await setDoc(doc(db,'mealPlans',planId),
     { weekOf:getWeekMonday(weekOffset), meals, createdAt:serverTimestamp() },
     { merge:true });
