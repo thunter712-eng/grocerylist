@@ -2735,8 +2735,12 @@ window.setRecipeChapter = function(id) {
   renderRecipes();
 };
 window.filterRecipes = function(q) {
+  const prev = document.getElementById('recipe-search-input');
+  const sel = prev?.selectionStart ?? q.length;
   recipeSearchQuery = q;
   renderRecipes();
+  const input = document.getElementById('recipe-search-input');
+  if (input) { input.focus(); input.setSelectionRange(sel, sel); }
 };
 
 window.openViewRecipe = function(id) {
