@@ -3108,34 +3108,42 @@ async function renderInsightsContent() {
     return;
   }
 
-  // Aggregate frequency and last-eaten date per recipe
-  const stats = {}; // recipeName → { count, lastWeekOf }
+  // Aggregate frequency and last-eaten date per meal
+  const stats = {};       // recipeName → { name, count, lastWeekOf, isCustom }
+  const recipeIds = new Set(recipes.map(r => r.id));
   plans.forEach(plan => {
     (plan.meals||[]).forEach(meal => {
       if (!meal.recipeName) return;
       const key = meal.recipeName;
-      if (!stats[key]) stats[key] = { name: meal.recipeName, count: 0, lastWeekOf: '' };
+      const isCustom = !meal.recipeId || !recipeIds.has(meal.recipeId);
+      if (!stats[key]) stats[key] = { name: meal.recipeName, count: 0, lastWeekOf: '', isCustom };
       stats[key].count++;
       if (plan.weekOf > stats[key].lastWeekOf) stats[key].lastWeekOf = plan.weekOf;
     });
   });
 
   const allStats = Object.values(stats);
+  const homeStats   = allStats.filter(s => !s.isCustom);
+  const customStats = allStats.filter(s => s.isCustom);
   const today = new Date(); today.setHours(0,0,0,0);
   const msPerWeek = 7 * 24 * 3600 * 1000;
   const cutoff = new Date(today.getTime() - 28 * 24 * 3600 * 1000); // 4 weeks ago
 
-  // Regulars: min 2 appearances, sorted by count desc
-  const regulars = allStats
+  // Regulars: min 2 appearances, home-cooked only, sorted by count desc
+  const regulars = homeStats
     .filter(s => s.count >= 2)
     .sort((a,b) => b.count - a.count)
     .slice(0, 12);
 
-  // Due for a comeback: eaten before but not in last 4 weeks, sorted by longest gap first
-  const comeback = allStats
+  // Due for a comeback: home-cooked, not in last 4 weeks, sorted by longest gap first
+  const comeback = homeStats
     .filter(s => new Date(s.lastWeekOf+'T12:00:00') < cutoff)
     .sort((a,b) => a.lastWeekOf.localeCompare(b.lastWeekOf))
     .slice(0, 12);
+
+  // Nights out: all custom meal entries sorted by frequency
+  const nightsOut = customStats
+    .sort((a,b) => b.count - a.count);
 
   const weeksAgo = weekOf => {
     const d = new Date(weekOf+'T12:00:00');
@@ -3159,6 +3167,15 @@ async function renderInsightsContent() {
         </div>`).join('')
     : '<div class="insight-empty" style="padding:1rem">Everything is in the recent rotation!</div>';
 
+  const totalNightsOut = nightsOut.reduce((sum, s) => sum + s.count, 0);
+  const nightsOutRows = nightsOut.length
+    ? nightsOut.map(s => `
+        <div class="insight-row">
+          <span class="insight-recipe-name">${esc(s.name)}</span>
+          <span class="insight-count">${s.count}×</span>
+        </div>`).join('')
+    : '<div class="insight-empty">No nights out recorded yet.</div>';
+
   el.innerHTML = `
     <div class="insight-section">
       <div class="insight-section-title">Regulars</div>
@@ -3167,6 +3184,10 @@ async function renderInsightsContent() {
     <div class="insight-section">
       <div class="insight-section-title">Due for a comeback</div>
       ${comebackRows}
+    </div>
+    <div class="insight-section">
+      <div class="insight-section-title">Nights Out${totalNightsOut ? ` <span style="font-size:.75rem;font-weight:400;color:var(--light)">(${totalNightsOut} total)</span>` : ''}</div>
+      ${nightsOutRows}
     </div>`;
 }
 
