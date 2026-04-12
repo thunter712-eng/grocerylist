@@ -646,6 +646,32 @@
     .master-info { flex: 1; }
     .master-name { font-size: .9375rem; font-weight: 500; color: var(--text); }
     .master-cat { font-size: .72rem; color: var(--light); margin-top: .15rem; font-weight: 500; }
+    .store-pref { display: flex; gap: .25rem; margin-top: .3rem; }
+    .store-pref-btn {
+      font-size: .6rem; font-weight: 700;
+      padding: .15rem .38rem; border-radius: 4px;
+      border: 1.5px solid var(--border);
+      color: var(--light); background: none; cursor: pointer;
+      letter-spacing: .02em; line-height: 1.4;
+    }
+    .store-pref-btn.active { background: var(--forest); border-color: var(--forest); color: white; }
+    /* Pantry check section */
+    .pantry-section { margin-bottom: 1.25rem; }
+    .pantry-header {
+      display: flex; align-items: center; gap: .5rem;
+      padding: .35rem .25rem .5rem;
+      font-size: .7rem; font-weight: 700;
+      color: #8b6914; letter-spacing: .09em; text-transform: uppercase;
+    }
+    .pantry-header::before {
+      content: ''; width: 4px; height: 4px;
+      background: #c4920a; border-radius: 50%; flex-shrink: 0;
+    }
+    .pantry-badge {
+      background: #c4920a; color: white;
+      font-size: .6rem; font-weight: 700;
+      padding: .1rem .4rem; border-radius: 4px; letter-spacing: .04em;
+    }
     .add-btn {
       background: var(--mint-faint);
       color: var(--forest-lite);
@@ -2087,8 +2113,27 @@ function renderList() {
   let html='', anyShown=false;
   const allCats = s.aisles.flatMap(a=>a.cats);
 
+  // ── Pantry Check section (condiments, spices, oils — likely already stocked) ──
+  const pantryItems = act.filter(i => PANTRY_CATS.has(i.category));
+  if (pantryItems.length) {
+    anyShown = true;
+    const sorted = [...pantryItems.filter(i=>!i.checked?.[store]), ...pantryItems.filter(i=>i.checked?.[store])];
+    html += `<div class="pantry-section">
+      <div class="pantry-header"><span class="pantry-badge">PANTRY CHECK</span>Verify you have these before buying</div>
+      <div class="item-list">`;
+    sorted.forEach(item => {
+      const c = item.checked?.[store]||false;
+      html += `<div class="item-row${c?' done':''}">
+        <button class="check-btn${c?' done':''}" onclick="toggle('${item.id}')">${c?'✓':''}</button>
+        <span class="item-name">${esc(item.name)}</span>
+        <button class="del-btn" onclick="removeFromList('${item.id}')">✕</button>
+      </div>`;
+    });
+    html += '</div></div>';
+  }
+
   s.aisles.forEach(aisle => {
-    const ai = act.filter(i=>aisle.cats.includes(i.category));
+    const ai = act.filter(i=>aisle.cats.includes(i.category) && !PANTRY_CATS.has(i.category));
     if (!ai.length) return;
     anyShown = true;
     const sorted = [...ai.filter(i=>!i.checked?.[store]), ...ai.filter(i=>i.checked?.[store])];
@@ -2106,7 +2151,7 @@ function renderList() {
     html += '</div></div>';
   });
 
-  const unk = act.filter(i=>!allCats.includes(i.category));
+  const unk = act.filter(i=>!allCats.includes(i.category) && !PANTRY_CATS.has(i.category));
   if (unk.length) {
     anyShown = true;
     html += `<div class="aisle-section">
@@ -2144,6 +2189,14 @@ function renderMaster() {
     </div>`; return;
   }
   const sorted = [...ms].sort((a,b)=>a.name.localeCompare(b.name));
+  const storePills = (item) => {
+    return `<div class="store-pref">
+      ${[['publix','P'],['walmart','W'],['traderjoes','TJ']].map(([s,lbl])=>
+        `<button class="store-pref-btn${item.preferredStore===s?' active':''}"
+          onclick="setStorePreference('${item.id}','${s}')">${lbl}</button>`
+      ).join('')}
+    </div>`;
+  };
   let html = '<div class="item-list">';
   sorted.forEach(item => {
     const on = item.active;
@@ -2151,6 +2204,7 @@ function renderMaster() {
       <div class="master-info">
         <div class="master-name">${esc(item.name)}</div>
         <div class="master-cat">${CATS[item.category]||item.category}</div>
+        ${storePills(item)}
       </div>
       <button class="add-btn${on?' on':''}" onclick="toggleActive('${item.id}')">${on?'✓ On list':'+ Add'}</button>
       <button class="del-btn" onclick="del('${item.id}')">✕</button>
@@ -2159,6 +2213,15 @@ function renderMaster() {
   html += '</div>';
   el.innerHTML = html;
 }
+
+window.setStorePreference = async function(id, s) {
+  const item = items.find(i=>i.id===id); if (!item) return;
+  const val = item.preferredStore === s ? null : s; // tap same = clear
+  await updateDoc(doc(db,'items',id), { preferredStore: val });
+};
+
+// Categories typically already stocked in a home pantry
+const PANTRY_CATS = new Set(['BAKING_SPICES_CONDIMENTS','OILS_DRESSINGS']);
 
 // ── ITEM ACTIONS ──
 window.removeFromList = async function(id) {
