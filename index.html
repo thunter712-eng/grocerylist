@@ -1917,9 +1917,20 @@ const KW = {
     'roses','tulips','sunflowers','lilies','daisies'],
 };
 
+function getCatOverrides() {
+  try { return JSON.parse(localStorage.getItem('hgl_cat_overrides')||'{}'); } catch { return {}; }
+}
+function saveCatOverride(name, cat) {
+  const ov = getCatOverrides();
+  ov[name.toLowerCase().trim()] = cat;
+  localStorage.setItem('hgl_cat_overrides', JSON.stringify(ov));
+}
+
 function detectCat(name) {
   const s = name.toLowerCase().trim();
   if (s.length < 2) return 'PRODUCE';
+  const ov = getCatOverrides();
+  if (ov[s]) return ov[s];
   for (const [c,kws] of Object.entries(KW)) { if (kws.includes(s)) return c; }
   for (const [c,kws] of Object.entries(KW)) { for (const k of kws) { if (s.includes(k)) return c; } }
   if (s.length >= 3) {
@@ -2257,6 +2268,7 @@ async function saveItem() {
   if (!name) return;
   const cat  = document.getElementById('item-cat').value;
   const rec  = document.getElementById('item-recurring').checked;
+  saveCatOverride(name, cat);
   if (editId) {
     await updateDoc(doc(db,'items',editId),{name,category:cat,recurring:rec});
     toast('Updated!');
