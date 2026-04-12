@@ -2849,18 +2849,17 @@ window.deleteRecipeFromView = async function() {
 // 📅 MEAL PLANNER
 // ════════════════════════════════════════════════
 
-function getWeekMonday(offset=0) {
+function getWeekSunday(offset=0) {
   const now = new Date();
-  const day = now.getDay();
-  const diff = day===0 ? -6 : 1-day;
-  const mon = new Date(now);
-  mon.setDate(now.getDate() + diff + offset*7);
-  mon.setHours(0,0,0,0);
-  return mon;
+  const day = now.getDay(); // 0=Sun, 1=Mon, ... 6=Sat
+  const sun = new Date(now);
+  sun.setDate(now.getDate() - day + offset*7);
+  sun.setHours(0,0,0,0);
+  return sun;
 }
 
 function getMealPlanId(offset=0) {
-  return getWeekMonday(offset).toISOString().slice(0,10);
+  return getWeekSunday(offset).toISOString().slice(0,10);
 }
 
 function loadMealPlan(offset=0) {
@@ -2870,7 +2869,7 @@ function loadMealPlan(offset=0) {
   unsubMealPlan = onSnapshot(doc(db,'mealPlans',planId), snap => {
     mealPlan = snap.exists()
       ? { id:snap.id, ...snap.data() }
-      : { id:planId, weekOf:getWeekMonday(offset), meals:[] };
+      : { id:planId, weekOf:getWeekSunday(offset), meals:[] };
     if (view==='mealplan') renderMealPlan();
   });
 }
@@ -2899,16 +2898,16 @@ window.setPlannerTab = function(t) { plannerTab = t; renderMealPlan(); };
 function renderWeekContent() {
   const el = document.getElementById('planner-content');
   if (!el) return;
-  const DAYS = ['Monday','Tuesday','Wednesday','Thursday','Friday','Saturday','Sunday'];
-  const monday = getWeekMonday(weekOffset);
+  const DAYS = ['Sunday','Monday','Tuesday','Wednesday','Thursday','Friday','Saturday'];
+  const sunday = getWeekSunday(weekOffset);
   const today  = new Date(); today.setHours(0,0,0,0);
-  const endSun = new Date(monday); endSun.setDate(monday.getDate()+6);
+  const endSat = new Date(sunday); endSat.setDate(sunday.getDate()+6);
   const fmt = d=>d.toLocaleDateString('en-US',{month:'short',day:'numeric'});
   const meals = mealPlan?.meals||[];
 
   let dayCells = DAYS.map((day,i)=>{
     const meal = meals.find(m=>m.day===day);
-    const date = new Date(monday); date.setDate(monday.getDate()+i);
+    const date = new Date(sunday); date.setDate(sunday.getDate()+i);
     const isToday = date.getTime()===today.getTime();
     return `<div class="day-cell${isToday?' today':''}">
       <div class="day-header">
@@ -2930,7 +2929,7 @@ function renderWeekContent() {
     <div class="week-nav">
       <button class="week-nav-btn" onclick="navigateWeek(-1)">‹</button>
       <div class="week-label">
-        <div class="week-range">${fmt(monday)} – ${fmt(endSun)}</div>
+        <div class="week-range">${fmt(sunday)} – ${fmt(endSat)}</div>
         ${weekOffset===0?'<div class="week-current-badge">This Week</div>':''}
       </div>
       <button class="week-nav-btn" onclick="navigateWeek(1)">›</button>
@@ -2999,7 +2998,7 @@ window.selectRecipeForDay = async function(recipeId, recipeName) {
   const meals = [...(mealPlan.meals||[]).filter(m=>m.day!==day),
                   { day, recipeId, recipeName, servings:4 }];
   await setDoc(doc(db,'mealPlans',planId),
-    { weekOf:getWeekMonday(weekOffset), meals, createdAt:serverTimestamp() },
+    { weekOf:getWeekSunday(weekOffset), meals, createdAt:serverTimestamp() },
     { merge:true });
   allMealPlansCache = null;
 };
@@ -3012,7 +3011,7 @@ window.selectCustomMealForDay = async function(name) {
   const meals = [...(mealPlan.meals||[]).filter(m=>m.day!==day),
                   { day, recipeId: null, recipeName: name, servings: 4 }];
   await setDoc(doc(db,'mealPlans',planId),
-    { weekOf:getWeekMonday(weekOffset), meals, createdAt:serverTimestamp() },
+    { weekOf:getWeekSunday(weekOffset), meals, createdAt:serverTimestamp() },
     { merge:true });
   allMealPlansCache = null;
 };
@@ -3021,7 +3020,7 @@ window.clearMealDay = async function(day) {
   if (!mealPlan) return;
   const meals = (mealPlan.meals||[]).filter(m=>m.day!==day && m.day!=null);
   await setDoc(doc(db,'mealPlans',mealPlan.id),
-    { weekOf:getWeekMonday(weekOffset), meals, createdAt:serverTimestamp() },
+    { weekOf:getWeekSunday(weekOffset), meals, createdAt:serverTimestamp() },
     { merge:true });
   allMealPlansCache = null; // invalidate cache after changes
 };
@@ -3043,7 +3042,7 @@ async function renderHistoryContent() {
   if (!el) return;
   el.innerHTML = '<div style="text-align:center;padding:2rem;color:var(--light);font-size:.85rem">Loading…</div>';
   const plans = await loadAllMealPlans();
-  const DAYS = ['Monday','Tuesday','Wednesday','Thursday','Friday','Saturday','Sunday'];
+  const DAYS = ['Sunday','Monday','Tuesday','Wednesday','Thursday','Friday','Saturday'];
   const fmt = d => new Date(d+'T12:00:00').toLocaleDateString('en-US',{month:'short',day:'numeric'});
   const currentWeekId = getMealPlanId(0);
 
@@ -3278,17 +3277,15 @@ function initWidget() {
     renderWidget(currentMeals, widgetRecipes);
   });
 
-  function weekMondayId() {
+  function weekSundayId() {
     const now = new Date();
-    const day = now.getDay();
-    const diff = day===0 ? -6 : 1-day;
-    const mon = new Date(now);
-    mon.setDate(now.getDate() + diff);
-    mon.setHours(0,0,0,0);
-    return mon.toISOString().slice(0,10);
+    const sun = new Date(now);
+    sun.setDate(now.getDate() - now.getDay());
+    sun.setHours(0,0,0,0);
+    return sun.toISOString().slice(0,10);
   }
 
-  let currentPlanId = weekMondayId();
+  let currentPlanId = weekSundayId();
 
   function subscribe(planId) {
     return onSnapshot(doc(db,'mealPlans',planId), snap=>{
@@ -3307,7 +3304,7 @@ function initWidget() {
     midnight.setHours(0,0,30,0);
     setTimeout(()=>{
       unsub();
-      currentPlanId = weekMondayId();
+      currentPlanId = weekSundayId();
       unsub = subscribe(currentPlanId);
       scheduleMidnightRefresh();
     }, midnight - now);
@@ -3317,15 +3314,14 @@ function initWidget() {
 
 function renderWidget(meals, widgetRecipes) {
   widgetRecipes = widgetRecipes || [];
-  const DAYS = ['Monday','Tuesday','Wednesday','Thursday','Friday','Saturday','Sunday'];
+  const DAYS = ['Sunday','Monday','Tuesday','Wednesday','Thursday','Friday','Saturday'];
   const now  = new Date();
   const day  = now.getDay();
-  const diff = day===0 ? -6 : 1-day;
-  const mon  = new Date(now); mon.setDate(now.getDate()+diff); mon.setHours(0,0,0,0);
+  const sun  = new Date(now); sun.setDate(now.getDate()-day); sun.setHours(0,0,0,0);
   const today = new Date(); today.setHours(0,0,0,0);
 
   document.getElementById('wg-days').innerHTML = DAYS.map((name,i)=>{
-    const date = new Date(mon); date.setDate(mon.getDate()+i);
+    const date = new Date(sun); date.setDate(sun.getDate()+i);
     const meal = meals.find(m=>m.day===name);
     const isToday = date.getTime()===today.getTime();
     let desc = '';
