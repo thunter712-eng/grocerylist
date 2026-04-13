@@ -2238,9 +2238,10 @@ window.removeFromList = async function(id) {
 };
 window.toggle = async function(id) {
   const it = items.find(i=>i.id===id); if(!it) return;
-  const ch = {...(it.checked||{})};
-  ch[store] = !ch[store];
-  await updateDoc(doc(db,'items',id),{checked:ch});
+  const val = !(it.checked?.[store]||false);
+  await updateDoc(doc(db,'items',id),{
+    checked:{ publix:val, walmart:val, traderjoes:val }
+  });
 };
 window.toggleActive = async function(id) {
   const it = items.find(i=>i.id===id); if(!it) return;
