@@ -2939,14 +2939,38 @@ function getMealPlanId(offset=0) {
   return getWeekSunday(offset).toISOString().slice(0,10);
 }
 
+function getOldMondayId(offset=0) {
+  // Returns the old Monday-based week ID for the same calendar week.
+  // Old system anchored on Monday; new system anchors on Sunday.
+  // The Monday of a Sun-Sat week is Sunday + 1 day.
+  const sun = getWeekSunday(offset);
+  const mon = new Date(sun);
+  mon.setDate(sun.getDate() + 1);
+  return mon.toISOString().slice(0,10);
+}
+
 function loadMealPlan(offset=0) {
   weekOffset = offset;
   if (unsubMealPlan) unsubMealPlan();
-  const planId = getMealPlanId(offset);
-  unsubMealPlan = onSnapshot(doc(db,'mealPlans',planId), snap => {
-    mealPlan = snap.exists()
-      ? { id:snap.id, ...snap.data() }
-      : { id:planId, weekOf:getWeekSunday(offset), meals:[] };
+  const planId    = getMealPlanId(offset);
+  const oldPlanId = getOldMondayId(offset);
+
+  unsubMealPlan = onSnapshot(doc(db,'mealPlans',planId), async snap => {
+    if (snap.exists()) {
+      mealPlan = { id:snap.id, ...snap.data() };
+    } else {
+      // Fall back to old Monday-based ID and migrate if found
+      const oldSnap = await getDoc(doc(db,'mealPlans',oldPlanId));
+      if (oldSnap.exists()) {
+        const data = oldSnap.data();
+        // Migrate to new Sunday-based ID
+        await setDoc(doc(db,'mealPlans',planId), { ...data, weekOf: getWeekSunday(offset).toISOString().slice(0,10) });
+        mealPlan = { id:planId, ...data };
+        toast('Meal plan migrated to new week format ✓');
+      } else {
+        mealPlan = { id:planId, weekOf:getWeekSunday(offset).toISOString().slice(0,10), meals:[] };
+      }
+    }
     if (view==='mealplan') renderMealPlan();
   });
 }
