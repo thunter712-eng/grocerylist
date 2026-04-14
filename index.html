@@ -374,6 +374,7 @@
     }
     .item-row:last-child { border-bottom: none; }
     .item-row.done { background: #FAFAF8; }
+    .item-row.other-store { opacity: .3; }
 
     .check-btn {
       width: 28px; height: 28px; min-width: 28px;
@@ -1296,7 +1297,28 @@
       white-space: nowrap;
       flex-shrink: 0;
     }
-    .wg-day.today .wg-name { color: #7a4a10; }
+    .wg-day.today {
+      background: rgba(160,110,20,.08);
+      border-radius: 4px;
+      padding: .5% 2%;
+      margin: 0 -2%;
+    }
+    .wg-day.today .wg-day-header::before,
+    .wg-day.today .wg-day-header::after { background: rgba(160,110,20,.35); }
+    .wg-day.today .wg-name {
+      color: #7a4a10;
+      font-size: clamp(1.3rem, 3.4vw, 2.3rem);
+      letter-spacing: .18em;
+    }
+    .wg-tonight-label {
+      font-family: 'DM Sans', sans-serif;
+      font-size: clamp(.5rem, 1.2vw, .8rem);
+      font-weight: 700;
+      color: #b07820;
+      letter-spacing: .2em;
+      text-transform: uppercase;
+      margin-bottom: .1em;
+    }
     .wg-meal-block {
       display: flex;
       flex-direction: column;
@@ -1316,7 +1338,11 @@
       text-overflow: ellipsis;
       line-height: 1.25;
     }
-    .wg-day.today .wg-meal { font-weight: 700; color: #3a2010; }
+    .wg-day.today .wg-meal {
+      font-size: clamp(1.7rem, 5.2vw, 3.6rem);
+      font-weight: 700;
+      color: #3a2010;
+    }
     .wg-meal.empty { color: rgba(90,65,35,.28); font-style: italic; font-weight: 300; }
     .wg-desc {
       font-family: 'Playfair Display', serif;
@@ -2123,7 +2149,8 @@ function renderList() {
       <div class="item-list">`;
     sorted.forEach(item => {
       const c = item.checked?.[store]||false;
-      html += `<div class="item-row${c?' done':''}">
+      const mismatch = item.preferredStore && item.preferredStore !== store;
+      html += `<div class="item-row${c?' done':''}${mismatch?' other-store':''}">
         <button class="check-btn${c?' done':''}" onclick="toggle('${item.id}')">${c?'✓':''}</button>
         <span class="item-name">${esc(item.name)}</span>
         <button class="del-btn" onclick="removeFromList('${item.id}')">✕</button>
@@ -2142,7 +2169,8 @@ function renderList() {
       <div class="item-list">`;
     sorted.forEach(item => {
       const c = item.checked?.[store]||false;
-      html += `<div class="item-row${c?' done':''}">
+      const mismatch = item.preferredStore && item.preferredStore !== store;
+      html += `<div class="item-row${c?' done':''}${mismatch?' other-store':''}">
         <button class="check-btn${c?' done':''}" onclick="toggle('${item.id}')">${c?'✓':''}</button>
         <span class="item-name">${esc(item.name)}</span>
         <button class="del-btn" onclick="removeFromList('${item.id}')">✕</button>
@@ -3437,6 +3465,7 @@ function renderWidget(meals, widgetRecipes) {
         <span class="wg-name">${name.toUpperCase()}</span>
       </div>
       <div class="wg-meal-block">
+        ${isToday ? `<span class="wg-tonight-label">Tonight</span>` : ''}
         <span class="wg-meal${meal?'':' empty'}">${meal ? esc(meal.recipeName) : '—'}</span>
         ${desc ? `<span class="wg-desc">${esc(desc)}</span>` : ''}
       </div>
