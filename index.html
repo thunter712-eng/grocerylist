@@ -1534,9 +1534,10 @@
         <input type="text" class="form-input" id="recipe-lib-name" placeholder="e.g. Chicken Shawarma" autocomplete="off">
       </div>
       <div class="recipe-tabs">
-        <button class="recipe-tab active" id="rtab-text" onclick="switchRecipeTab('text')">📋 Paste Text</button>
+        <button class="recipe-tab active" id="rtab-text" onclick="switchRecipeTab('text')">📋 Text</button>
         <button class="recipe-tab" id="rtab-url" onclick="switchRecipeTab('url')">🔗 URL</button>
         <button class="recipe-tab" id="rtab-photo" onclick="switchRecipeTab('photo')">📷 Photo</button>
+        <button class="recipe-tab" id="rtab-tiktok" onclick="switchRecipeTab('tiktok')">🎵 TikTok</button>
       </div>
       <div id="recipe-text-tab">
         <div class="form-group">
@@ -1558,6 +1559,19 @@
         <div class="photo-capture-area" id="photo-capture-area" onclick="document.getElementById('recipe-photo-input').click()">
           <div class="photo-capture-icon">📷</div>
           <div class="photo-capture-label" id="photo-capture-label">Tap to take a photo or choose from library</div>
+        </div>
+      </div>
+      <div id="recipe-tiktok-tab" style="display:none">
+        <div class="form-group">
+          <label class="form-label">TikTok Video Link</label>
+          <input type="url" class="form-input" id="recipe-tiktok-input" placeholder="https://www.tiktok.com/@user/video/…" autocomplete="off">
+        </div>
+        <div id="tiktok-preview" style="display:none;margin-bottom:.75rem">
+          <div style="background:var(--cream);border-radius:12px;padding:.75rem 1rem;border:1.5px solid var(--border)">
+            <div style="font-size:.78rem;font-weight:600;color:var(--mid);margin-bottom:.35rem" id="tiktok-author"></div>
+            <div style="font-size:.85rem;color:var(--text);line-height:1.5" id="tiktok-caption"></div>
+            <img id="tiktok-thumb" style="width:100%;border-radius:8px;margin-top:.5rem;display:none;max-height:200px;object-fit:cover">
+          </div>
         </div>
       </div>
       <div class="api-key-section">
@@ -1668,6 +1682,7 @@
       <button class="store-tab active" onclick="setStore('publix')" id="tab-publix">Publix</button>
       <button class="store-tab" onclick="setStore('walmart')" id="tab-walmart">Walmart</button>
       <button class="store-tab" onclick="setStore('traderjoes')" id="tab-traderjoes">Trader Joe's</button>
+      <button class="store-tab" onclick="setStore('aldi')" id="tab-aldi">Aldi</button>
     </div>
   </div>
 
@@ -1786,6 +1801,22 @@ const STORES = {
       { id:'beverages', label:'Beverages',                cats:['BEVERAGES'] },
       { id:'wine',      label:'Wine & Beer',              cats:['WINE_BEER'] },
       { id:'home',      label:'Household & Body Care',    cats:['HOUSEHOLD','LAUNDRY_CLEANING','TOILETRIES_PERSONAL_CARE','PHARMACY_MEDICINE'] },
+    ]
+  },
+  aldi: {
+    name:'Aldi',
+    aisles: [
+      { id:'produce',   label:'Produce & Floral',                    cats:['PRODUCE','FLORAL'] },
+      { id:'bakery',    label:'Bakery',                              cats:['BAKERY'] },
+      { id:'deli',      label:'Deli & Dairy',                        cats:['DELI','DAIRY_EGGS_CHEESE'] },
+      { id:'meat',      label:'Meat & Seafood',                      cats:['MEAT','SEAFOOD'] },
+      { id:'a1',        label:'Aisle 1 — Cereals & Coffee',          cats:['CEREALS_COFFEE'] },
+      { id:'a2',        label:'Aisle 2 — Canned, Pasta, Rice & Oils',cats:['CANNED_SOUPS','PASTA_RICE_BEANS','OILS_DRESSINGS'] },
+      { id:'a3',        label:'Aisle 3 — Baking, Condiments & Beverages', cats:['BAKING_SPICES_CONDIMENTS','BEVERAGES'] },
+      { id:'a4',        label:'Aisle 4 — Snacks & Chips',            cats:['SNACKS_CRACKERS_CANDY','CHIPS'] },
+      { id:'a5',        label:'Aisle 5 — Household & Personal Care', cats:['HOUSEHOLD','LAUNDRY_CLEANING','TOILETRIES_PERSONAL_CARE','PHARMACY_MEDICINE'] },
+      { id:'frozen',    label:'Frozen',                              cats:['FROZEN'] },
+      { id:'wine',      label:'Wine & Beer',                         cats:['WINE_BEER'] },
     ]
   }
 };
@@ -2218,7 +2249,7 @@ function renderMaster() {
   const sorted = [...ms].sort((a,b)=>a.name.localeCompare(b.name));
   const storePills = (item) => {
     return `<div class="store-pref">
-      ${[['publix','P'],['walmart','W'],['traderjoes','TJ']].map(([s,lbl])=>
+      ${[['publix','P'],['walmart','W'],['traderjoes','TJ'],['aldi','A']].map(([s,lbl])=>
         `<button class="store-pref-btn${item.preferredStore===s?' active':''}"
           onclick="setStorePreference('${item.id}','${s}')">${lbl}</button>`
       ).join('')}
@@ -2267,12 +2298,14 @@ window.toggle = async function(id) {
   const it = items.find(i=>i.id===id); if(!it) return;
   const val = !(it.checked?.[store]||false);
   await updateDoc(doc(db,'items',id),{
-    checked:{ publix:val, walmart:val, traderjoes:val }
+    checked:{ publix:val, walmart:val, traderjoes:val, aldi:val }
   });
 };
 window.toggleActive = async function(id) {
   const it = items.find(i=>i.id===id); if(!it) return;
-  await updateDoc(doc(db,'items',id),{active:!it.active});
+  const updates = {active:!it.active};
+  if (!it.active) updates.checked = {publix:false,walmart:false,traderjoes:false,aldi:false};
+  await updateDoc(doc(db,'items',id), updates);
   toast(it.active?`${it.name} removed from list`:`${it.name} added!`);
 };
 window.del = async function(id) {
@@ -2346,7 +2379,7 @@ document.getElementById('item-name').addEventListener('input', function() {
 });
 
 window.quickAdd = async function(id) {
-  await updateDoc(doc(db,'items',id),{active:true});
+  await updateDoc(doc(db,'items',id),{active:true,checked:{publix:false,walmart:false,traderjoes:false,aldi:false}});
   closeModal();
   toast('Added to list!');
 };
@@ -2366,12 +2399,12 @@ async function saveItem() {
   } else {
     const dup = items.find(i=>i.recurring && i.name.toLowerCase()===name.toLowerCase());
     if (dup) {
-      await updateDoc(doc(db,'items',dup.id),{active:true});
+      await updateDoc(doc(db,'items',dup.id),{active:true,checked:{publix:false,walmart:false,traderjoes:false,aldi:false}});
       toast(`${dup.name} added from master list!`);
     } else {
       await addDoc(collection(db,'items'),{
         name, category:cat, recurring:rec, active:true,
-        checked:{publix:false,walmart:false,traderjoes:false},
+        checked:{publix:false,walmart:false,traderjoes:false,aldi:false},
         addedAt:serverTimestamp()
       });
       toast(`${name} added!`);
@@ -2424,6 +2457,8 @@ window.openRecipeModal = function(prefillName='') {
   showRecipeStep(1);
   document.getElementById('recipe-text-input').value = '';
   document.getElementById('recipe-url-input').value  = '';
+  document.getElementById('recipe-tiktok-input').value = '';
+  document.getElementById('tiktok-preview').style.display = 'none';
   document.getElementById('api-key-input-wrap').style.display = 'none';
   selectedPhotos = [];
   renderPhotoThumbs();
@@ -2440,12 +2475,14 @@ window.closeRecipeModal = function() {
 
 window.switchRecipeTab = function(tab) {
   recipeTab = tab;
-  document.getElementById('recipe-text-tab').style.display  = tab==='text'  ? 'block' : 'none';
-  document.getElementById('recipe-url-tab').style.display   = tab==='url'   ? 'block' : 'none';
-  document.getElementById('recipe-photo-tab').style.display = tab==='photo' ? 'block' : 'none';
-  document.getElementById('rtab-text').classList.toggle('active',  tab==='text');
-  document.getElementById('rtab-url').classList.toggle('active',   tab==='url');
-  document.getElementById('rtab-photo').classList.toggle('active', tab==='photo');
+  document.getElementById('recipe-text-tab').style.display    = tab==='text'   ? 'block' : 'none';
+  document.getElementById('recipe-url-tab').style.display     = tab==='url'    ? 'block' : 'none';
+  document.getElementById('recipe-photo-tab').style.display   = tab==='photo'  ? 'block' : 'none';
+  document.getElementById('recipe-tiktok-tab').style.display  = tab==='tiktok' ? 'block' : 'none';
+  document.getElementById('rtab-text').classList.toggle('active',   tab==='text');
+  document.getElementById('rtab-url').classList.toggle('active',    tab==='url');
+  document.getElementById('rtab-photo').classList.toggle('active',  tab==='photo');
+  document.getElementById('rtab-tiktok').classList.toggle('active', tab==='tiktok');
 };
 
 window.handlePhotoSelect = function(input) {
@@ -2559,6 +2596,58 @@ window.extractIngredients = async function() {
     } catch(e) {
       showRecipeStep(1);
       toast('Could not process photo — try again');
+      return;
+    }
+  } else if (recipeTab === 'tiktok') {
+    const tiktokUrl = document.getElementById('recipe-tiktok-input').value.trim();
+    if (!tiktokUrl) { toast('Paste a TikTok link first'); return; }
+    if (!tiktokUrl.includes('tiktok.com')) { toast('That doesn\'t look like a TikTok link'); return; }
+    showRecipeStep(2);
+    try {
+      // Fetch oEmbed data for caption + thumbnail
+      const oembedUrl = 'https://corsproxy.io/?' + encodeURIComponent('https://www.tiktok.com/oembed?url=' + encodeURIComponent(tiktokUrl));
+      const oembedResp = await fetch(oembedUrl);
+      if (!oembedResp.ok) throw new Error('Could not fetch TikTok data');
+      const oembed = await oembedResp.json();
+      const caption = oembed.title || '';
+      const author  = oembed.author_name || '';
+      const thumbUrl = oembed.thumbnail_url || '';
+
+      // Show preview
+      document.getElementById('tiktok-author').textContent = '@' + author;
+      document.getElementById('tiktok-caption').textContent = caption;
+      const thumbEl = document.getElementById('tiktok-thumb');
+      if (thumbUrl) { thumbEl.src = thumbUrl; thumbEl.style.display = 'block'; }
+      else { thumbEl.style.display = 'none'; }
+      document.getElementById('tiktok-preview').style.display = 'block';
+
+      // Try to fetch thumbnail as base64 for Claude vision
+      let contentBlocks = [];
+      if (thumbUrl) {
+        try {
+          const thumbProxyUrl = 'https://corsproxy.io/?' + encodeURIComponent(thumbUrl);
+          const thumbResp = await fetch(thumbProxyUrl);
+          if (thumbResp.ok) {
+            const blob = await thumbResp.blob();
+            const b64 = await new Promise(resolve => {
+              const r = new FileReader();
+              r.onload = () => resolve(r.result.split(',')[1]);
+              r.readAsDataURL(blob);
+            });
+            const mediaType = blob.type || 'image/jpeg';
+            contentBlocks.push({ type:'image', source:{ type:'base64', media_type:mediaType, data:b64 } });
+          }
+        } catch(_) {} // thumbnail fetch failed — proceed with text only
+      }
+
+      const tiktokPrompt = caption
+        ? `${EXTRACT_PROMPT}\n\nThis is from a TikTok recipe video by @${author}. The video caption is:\n${caption}`
+        : `${EXTRACT_PROMPT}\n\nThis is a thumbnail from a TikTok recipe video by @${author}. Extract any recipe information you can see.`;
+      contentBlocks.push({ type:'text', text:tiktokPrompt });
+      claudeContent = contentBlocks;
+    } catch(e) {
+      showRecipeStep(1);
+      toast('Could not fetch TikTok data — check the link');
       return;
     }
   } else {
@@ -2911,12 +3000,12 @@ window.addRecipeToGroceryList = async function() {
   for (const ing of r.ingredients) {
     const dup = items.find(i=>i.recurring && i.name.toLowerCase()===ing.name.toLowerCase());
     if (dup) {
-      await updateDoc(doc(db,'items',dup.id),{active:true});
+      await updateDoc(doc(db,'items',dup.id),{active:true,checked:{publix:false,walmart:false,traderjoes:false,aldi:false}});
     } else {
       await addDoc(collection(db,'items'),{
         name:ing.name, category:ing.category||detectCat(ing.name),
         recurring:false, active:true,
-        checked:{publix:false,walmart:false,traderjoes:false},
+        checked:{publix:false,walmart:false,traderjoes:false,aldi:false},
         addedAt:serverTimestamp()
       });
     }
@@ -3372,11 +3461,11 @@ async function doGenerateGroceryList(ingredientText) {
       if (!g.name) continue;
       const cat = (g.category && CATS[g.category]) ? g.category : detectCat(g.name);
       const dup = items.find(i=>i.recurring&&i.name.toLowerCase()===g.name.toLowerCase());
-      if (dup) { await updateDoc(doc(db,'items',dup.id),{active:true}); }
+      if (dup) { await updateDoc(doc(db,'items',dup.id),{active:true,checked:{publix:false,walmart:false,traderjoes:false,aldi:false}}); }
       else {
         await addDoc(collection(db,'items'),{
           name:g.name, category:cat, recurring:false, active:true,
-          checked:{publix:false,walmart:false,traderjoes:false},
+          checked:{publix:false,walmart:false,traderjoes:false,aldi:false},
           addedAt:serverTimestamp()
         });
       }
