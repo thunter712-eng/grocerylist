@@ -16,6 +16,10 @@
   <script>
     // Apply saved font size immediately to avoid flash
     (function(){ var s=localStorage.getItem('hgl_fs'); if(s) document.documentElement.style.fontSize=s+'px'; })();
+    // Register service worker for offline support + cache updates
+    if ('serviceWorker' in navigator) {
+      navigator.serviceWorker.register('sw.js');
+    }
   </script>
   <style>
     *, *::before, *::after {
