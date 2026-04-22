@@ -3213,7 +3213,7 @@ window.selectRecipeForDay = async function(recipeId, recipeName) {
   const meals = [...(mealPlan.meals||[]).filter(m=>m.day!==day),
                   { day, recipeId, recipeName, servings:4 }];
   await setDoc(doc(db,'mealPlans',planId),
-    { weekOf:getWeekSunday(weekOffset), meals, createdAt:serverTimestamp() },
+    { weekOf:getWeekSunday(weekOffset).toISOString().slice(0,10), meals, createdAt:serverTimestamp() },
     { merge:true });
   allMealPlansCache = null;
 };
@@ -3226,7 +3226,7 @@ window.selectCustomMealForDay = async function(name) {
   const meals = [...(mealPlan.meals||[]).filter(m=>m.day!==day),
                   { day, recipeId: null, recipeName: name, servings: 4 }];
   await setDoc(doc(db,'mealPlans',planId),
-    { weekOf:getWeekSunday(weekOffset), meals, createdAt:serverTimestamp() },
+    { weekOf:getWeekSunday(weekOffset).toISOString().slice(0,10), meals, createdAt:serverTimestamp() },
     { merge:true });
   allMealPlansCache = null;
 };
@@ -3235,7 +3235,7 @@ window.clearMealDay = async function(day) {
   if (!mealPlan) return;
   const meals = (mealPlan.meals||[]).filter(m=>m.day!==day && m.day!=null);
   await setDoc(doc(db,'mealPlans',mealPlan.id),
-    { weekOf:getWeekSunday(weekOffset), meals, createdAt:serverTimestamp() },
+    { weekOf:getWeekSunday(weekOffset).toISOString().slice(0,10), meals, createdAt:serverTimestamp() },
     { merge:true });
   allMealPlansCache = null; // invalidate cache after changes
 };
@@ -3244,11 +3244,24 @@ window.clearMealDay = async function(day) {
 
 async function loadAllMealPlans() {
   if (allMealPlansCache) return allMealPlansCache;
-  const snap = await getDocs(collection(db, 'mealPlans'));
-  allMealPlansCache = snap.docs
-    .map(d => ({ id: d.id, ...d.data() }))
-    .filter(p => p.weekOf && (p.meals||[]).length > 0)
-    .sort((a,b) => b.weekOf.localeCompare(a.weekOf)); // newest first
+  try {
+    const snap = await getDocs(collection(db, 'mealPlans'));
+    allMealPlansCache = snap.docs
+      .map(d => {
+        const p = { id: d.id, ...d.data() };
+        // Normalize weekOf: Firestore Timestamp → string "YYYY-MM-DD"
+        if (p.weekOf && typeof p.weekOf !== 'string') {
+          const dt = p.weekOf.toDate ? p.weekOf.toDate() : new Date(p.weekOf);
+          p.weekOf = dt.toISOString().slice(0,10);
+        }
+        return p;
+      })
+      .filter(p => p.weekOf && (p.meals||[]).length > 0)
+      .sort((a,b) => b.weekOf.localeCompare(a.weekOf)); // newest first
+  } catch(e) {
+    console.error('Failed to load meal plans:', e);
+    allMealPlansCache = [];
+  }
   return allMealPlansCache;
 }
 
