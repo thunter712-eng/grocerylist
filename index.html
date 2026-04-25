@@ -3392,10 +3392,17 @@ window.searchNearbyRestaurants = async function() {
   const radiusMeters = Math.round(radiusMiles * 1609.34);
 
   try {
-    const resp = await fetch(
-      `https://api.foursquare.com/v3/places/search?query=${encodeURIComponent(cuisine)}&ll=${lat},${lng}&radius=${radiusMeters}&categories=13065&sort=DISTANCE&limit=15`,
-      { headers: { 'Authorization': fsqApiKey, 'Accept': 'application/json' } }
-    );
+    const fsqUrl = `https://api.foursquare.com/v3/places/search?query=${encodeURIComponent(cuisine)}&ll=${lat},${lng}&radius=${radiusMeters}&categories=13065&sort=DISTANCE&limit=15`;
+    // Try direct first, fall back to CORS proxy
+    let resp;
+    try {
+      resp = await fetch(fsqUrl, { headers: { 'Authorization': fsqApiKey, 'Accept': 'application/json' } });
+    } catch(_) {
+      // CORS blocked — try via proxy
+      resp = await fetch('https://corsproxy.io/?' + encodeURIComponent(fsqUrl), {
+        headers: { 'Authorization': fsqApiKey, 'Accept': 'application/json' }
+      });
+    }
     if (!resp.ok) {
       const errData = await resp.json().catch(()=>({}));
       throw new Error(errData.message || 'API error ' + resp.status);
