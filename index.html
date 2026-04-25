@@ -1667,26 +1667,17 @@
       <input type="text" class="picker-search" id="picker-out-search" placeholder="Type a restaurant name…" oninput="filterRestaurants(this.value)" autocomplete="off">
       <div class="picker-list" id="picker-out-list"></div>
       <div style="margin-top:.75rem;border-top:1px solid var(--border);padding-top:.75rem">
-        <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:.5rem">
+        <div style="margin-bottom:.5rem">
           <span style="font-size:.72rem;font-weight:700;color:var(--light);text-transform:uppercase;letter-spacing:.08em">Discover Nearby</span>
-          <span class="api-key-status" id="fsq-key-status" style="font-size:.62rem;cursor:pointer" onclick="toggleFsqKeyInput()">Not Set</span>
         </div>
-        <div id="fsq-key-wrap" style="display:none;margin-bottom:.75rem">
-          <input type="password" class="form-input" id="fsq-key-input" placeholder="Foursquare API key" autocomplete="off" style="font-family:monospace;font-size:.8rem;margin-bottom:.4rem">
-          <div style="display:flex;gap:.5rem">
-            <button class="btn-save" style="flex:1;padding:.5rem;font-size:.78rem" onclick="saveFsqKey()">Save</button>
-            <button class="btn-cancel" style="flex:1;padding:.5rem;font-size:.78rem" onclick="clearFsqKey()">Clear</button>
-          </div>
-          <p style="font-size:.65rem;color:var(--light);margin-top:.35rem;line-height:1.4">Free at foursquare.com/developers — no credit card needed</p>
-        </div>
-        <input type="text" class="picker-search" id="fsq-cuisine-input" placeholder="What are you in the mood for? (e.g. Thai, pizza, sushi)" autocomplete="off" style="margin-bottom:.5rem">
+        <input type="text" class="picker-search" id="discover-cuisine-input" placeholder="What are you in the mood for? (e.g. Thai, pizza, sushi)" autocomplete="off" style="margin-bottom:.5rem">
         <div style="display:flex;align-items:center;gap:.75rem;margin-bottom:.75rem">
           <span style="font-size:.78rem;color:var(--mid);white-space:nowrap">Within</span>
-          <input type="range" id="fsq-radius" min="1" max="30" value="10" style="flex:1" oninput="document.getElementById('fsq-radius-label').textContent=this.value+' mi'">
-          <span style="font-size:.78rem;font-weight:600;color:var(--text);white-space:nowrap" id="fsq-radius-label">10 mi</span>
+          <input type="range" id="discover-radius" min="1" max="30" value="10" style="flex:1" oninput="document.getElementById('discover-radius-label').textContent=this.value+' mi'">
+          <span style="font-size:.78rem;font-weight:600;color:var(--text);white-space:nowrap" id="discover-radius-label">10 mi</span>
         </div>
         <button class="btn-save" style="width:100%;padding:.7rem;font-size:.85rem" onclick="searchNearbyRestaurants()">🔍 Search Nearby</button>
-        <div id="fsq-results" style="margin-top:.75rem"></div>
+        <div id="discover-results" style="margin-top:.75rem"></div>
       </div>
     </div>
     <div style="margin-top:.875rem">
@@ -2140,10 +2131,7 @@ async function startApp() {
   // Load shared config (Claude API key)
   try {
     const cfgDoc = await getDoc(doc(db,'config','app'));
-    if (cfgDoc.exists()) {
-      claudeApiKey = cfgDoc.data().claudeKey || '';
-      fsqApiKey    = cfgDoc.data().fsqKey    || '';
-    }
+    if (cfgDoc.exists()) claudeApiKey = cfgDoc.data().claudeKey || '';
   } catch(_) {}
   // Items listener
   unsub = onSnapshot(collection(db,'items'), snap => {
@@ -3206,8 +3194,8 @@ window.openRecipePicker = function(day) {
   document.getElementById('picker-search').value = '';
   setPickerMode('cook');
   renderPickerList('');
-  document.getElementById('fsq-results').innerHTML = '';
-  document.getElementById('fsq-cuisine-input').value = '';
+  document.getElementById('discover-results').innerHTML = '';
+  document.getElementById('discover-cuisine-input').value = '';
   document.getElementById('recipe-picker-modal').style.display = 'flex';
   setTimeout(()=>document.getElementById('picker-search').focus(),150);
 };
@@ -3247,7 +3235,6 @@ window.filterPickerRecipes = function(q) { renderPickerList(q); };
 
 // ── PICKER MODE (Cook vs Eat Out) ──
 let pickerMode = 'cook';
-let fsqApiKey  = '';
 let restaurantHistory = []; // unique past restaurant names, sorted by frequency
 
 window.setPickerMode = function(mode) {
@@ -3258,7 +3245,6 @@ window.setPickerMode = function(mode) {
   document.getElementById('picker-out-view').style.display  = mode==='out'  ? 'block' : 'none';
   if (mode==='out') {
     loadRestaurantHistory();
-    updateFsqKeyStatus();
     document.getElementById('picker-out-search').value = '';
     filterRestaurants('');
     setTimeout(()=>document.getElementById('picker-out-search').focus(),100);
@@ -3322,57 +3308,12 @@ window.filterRestaurants = function(q) {
   });
 };
 
-// ── FOURSQUARE DISCOVER ──
-function updateFsqKeyStatus() {
-  const el = document.getElementById('fsq-key-status');
-  if (fsqApiKey) {
-    el.textContent = 'Key Set ✓';
-    el.className = 'api-key-status set';
-  } else {
-    el.textContent = 'No Key';
-    el.className = 'api-key-status unset';
-  }
-}
-
-window.toggleFsqKeyInput = function() {
-  const wrap = document.getElementById('fsq-key-wrap');
-  const shown = wrap.style.display !== 'none';
-  wrap.style.display = shown ? 'none' : 'block';
-  if (!shown) {
-    if (fsqApiKey) document.getElementById('fsq-key-input').value = fsqApiKey;
-    setTimeout(()=>document.getElementById('fsq-key-input').focus(),100);
-  }
-};
-
-window.saveFsqKey = async function() {
-  const key = document.getElementById('fsq-key-input').value.trim();
-  if (!key) return;
-  fsqApiKey = key;
-  await setDoc(doc(db,'config','app'), { fsqKey: key }, { merge: true });
-  document.getElementById('fsq-key-wrap').style.display = 'none';
-  updateFsqKeyStatus();
-  toast('Foursquare key saved!');
-};
-
-window.clearFsqKey = async function() {
-  fsqApiKey = '';
-  await setDoc(doc(db,'config','app'), { fsqKey: '' }, { merge: true });
-  document.getElementById('fsq-key-input').value = '';
-  document.getElementById('fsq-key-wrap').style.display = 'none';
-  updateFsqKeyStatus();
-  toast('Foursquare key cleared');
-};
-
+// ── DISCOVER NEARBY (OpenStreetMap — free, no API key) ──
 window.searchNearbyRestaurants = async function() {
-  const cuisine = document.getElementById('fsq-cuisine-input').value.trim();
+  const cuisine = document.getElementById('discover-cuisine-input').value.trim();
   if (!cuisine) { toast('Enter what kind of food you want'); return; }
-  if (!fsqApiKey) {
-    toggleFsqKeyInput();
-    toast('Set your Foursquare API key first');
-    return;
-  }
 
-  const resultsEl = document.getElementById('fsq-results');
+  const resultsEl = document.getElementById('discover-results');
   resultsEl.innerHTML = '<div style="text-align:center;padding:1rem;color:var(--light);font-size:.85rem">Searching…</div>';
 
   // Get user location
@@ -3388,27 +3329,39 @@ window.searchNearbyRestaurants = async function() {
     return;
   }
 
-  const radiusMiles = parseInt(document.getElementById('fsq-radius').value);
+  const radiusMiles = parseInt(document.getElementById('discover-radius').value);
   const radiusMeters = Math.round(radiusMiles * 1609.34);
+  const q = cuisine.toLowerCase();
 
   try {
-    const fsqUrl = `https://api.foursquare.com/v3/places/search?query=${encodeURIComponent(cuisine)}&ll=${lat},${lng}&radius=${radiusMeters}&categories=13065&sort=DISTANCE&limit=15`;
-    // Try direct first, fall back to CORS proxy
-    let resp;
-    try {
-      resp = await fetch(fsqUrl, { headers: { 'Authorization': fsqApiKey, 'Accept': 'application/json' } });
-    } catch(_) {
-      // CORS blocked — try via proxy
-      resp = await fetch('https://corsproxy.io/?' + encodeURIComponent(fsqUrl), {
-        headers: { 'Authorization': fsqApiKey, 'Accept': 'application/json' }
-      });
-    }
-    if (!resp.ok) {
-      const errData = await resp.json().catch(()=>({}));
-      throw new Error(errData.message || 'API error ' + resp.status);
-    }
+    // Search OpenStreetMap via Overpass API for restaurants matching cuisine
+    const query = `[out:json][timeout:15];(
+      node["amenity"="restaurant"]["cuisine"~"${q}",i](around:${radiusMeters},${lat},${lng});
+      node["amenity"="restaurant"]["name"~"${q}",i](around:${radiusMeters},${lat},${lng});
+      node["amenity"="fast_food"]["cuisine"~"${q}",i](around:${radiusMeters},${lat},${lng});
+      node["amenity"="fast_food"]["name"~"${q}",i](around:${radiusMeters},${lat},${lng});
+    );out body;`;
+    const resp = await fetch('https://overpass-api.de/api/interpreter', {
+      method: 'POST',
+      body: 'data=' + encodeURIComponent(query)
+    });
+    if (!resp.ok) throw new Error('Search failed — try again');
     const data = await resp.json();
-    const places = data.results || [];
+    const elements = data.elements || [];
+
+    // Deduplicate by name and calculate distance
+    const seen = new Set();
+    const places = elements
+      .filter(el => el.tags?.name)
+      .map(el => {
+        const dlat = (el.lat - lat) * 111320;
+        const dlng = (el.lon - lng) * 111320 * Math.cos(lat * Math.PI / 180);
+        const distM = Math.sqrt(dlat*dlat + dlng*dlng);
+        return { name: el.tags.name, cuisine: el.tags.cuisine || '', distM, lat: el.lat, lon: el.lon };
+      })
+      .filter(p => { if (seen.has(p.name)) return false; seen.add(p.name); return true; })
+      .sort((a,b) => a.distM - b.distM)
+      .slice(0, 20);
 
     if (!places.length) {
       resultsEl.innerHTML = '<div style="text-align:center;padding:1rem;color:var(--light);font-size:.85rem">No restaurants found — try different keywords or a larger radius</div>';
@@ -3416,18 +3369,18 @@ window.searchNearbyRestaurants = async function() {
     }
 
     resultsEl.innerHTML = places.map(p => {
-      const dist = p.distance ? (p.distance / 1609.34).toFixed(1) + ' mi' : '';
-      const addr = p.location?.formatted_address || p.location?.address || '';
-      return `<div class="picker-item picker-fsq" data-name="${esc(p.name)}">
+      const dist = (p.distM / 1609.34).toFixed(1) + ' mi';
+      const cuisineLabel = p.cuisine ? p.cuisine.replace(/_/g,' ').replace(/;/g, ', ') : '';
+      return `<div class="picker-item picker-discover" data-name="${esc(p.name)}">
         <div style="flex:1;min-width:0">
           <div class="picker-item-name">${esc(p.name)}</div>
-          <div style="font-size:.7rem;color:var(--light);margin-top:.1rem;white-space:nowrap;overflow:hidden;text-overflow:ellipsis">${esc(addr)}</div>
+          ${cuisineLabel ? `<div style="font-size:.7rem;color:var(--light);margin-top:.1rem">${esc(cuisineLabel)}</div>` : ''}
         </div>
         <span style="font-size:.75rem;color:var(--mid);font-weight:600;white-space:nowrap;margin-left:.5rem">${dist}</span>
       </div>`;
     }).join('');
 
-    resultsEl.querySelectorAll('.picker-fsq').forEach(item => {
+    resultsEl.querySelectorAll('.picker-discover').forEach(item => {
       item.addEventListener('click', () => selectCustomMealForDay(item.dataset.name));
     });
   } catch(e) {
