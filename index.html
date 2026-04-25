@@ -3308,7 +3308,7 @@ window.filterRestaurants = function(q) {
   });
 };
 
-// ── DISCOVER NEARBY (OpenStreetMap — free, no API key) ──
+// ── DISCOVER NEARBY (Nominatim — free, no API key) ──
 window.searchNearbyRestaurants = async function() {
   const cuisine = document.getElementById('discover-cuisine-input').value.trim();
   if (!cuisine) { toast('Enter what kind of food you want'); return; }
@@ -3330,36 +3330,40 @@ window.searchNearbyRestaurants = async function() {
   }
 
   const radiusMiles = parseInt(document.getElementById('discover-radius').value);
-  const radiusMeters = Math.round(radiusMiles * 1609.34);
-  const q = cuisine.toLowerCase();
+  // Build a bounding box from radius
+  const radiusDeg = (radiusMiles * 1609.34) / 111320;
+  const lonScale  = Math.cos(lat * Math.PI / 180);
+  const minLat = lat - radiusDeg;
+  const maxLat = lat + radiusDeg;
+  const minLon = lng - radiusDeg / lonScale;
+  const maxLon = lng + radiusDeg / lonScale;
 
   try {
-    // Search OpenStreetMap via Overpass API for restaurants matching cuisine
-    const query = `[out:json][timeout:15];(
-      node["amenity"="restaurant"]["cuisine"~"${q}",i](around:${radiusMeters},${lat},${lng});
-      node["amenity"="restaurant"]["name"~"${q}",i](around:${radiusMeters},${lat},${lng});
-      node["amenity"="fast_food"]["cuisine"~"${q}",i](around:${radiusMeters},${lat},${lng});
-      node["amenity"="fast_food"]["name"~"${q}",i](around:${radiusMeters},${lat},${lng});
-    );out body;`;
-    const resp = await fetch('https://overpass-api.de/api/interpreter', {
-      method: 'POST',
-      body: 'data=' + encodeURIComponent(query)
+    // Use Nominatim to search for restaurants by keyword near the user
+    const url = `https://nominatim.openstreetmap.org/search?` +
+      `q=${encodeURIComponent(cuisine + ' restaurant')}&format=json&limit=30&addressdetails=1` +
+      `&viewbox=${minLon},${maxLat},${maxLon},${minLat}&bounded=1`;
+    const resp = await fetch(url, {
+      headers: { 'Accept': 'application/json', 'User-Agent': 'DoWeHaveFood-App/1.0' }
     });
     if (!resp.ok) throw new Error('Search failed — try again');
-    const data = await resp.json();
-    const elements = data.elements || [];
+    const results = await resp.json();
 
-    // Deduplicate by name and calculate distance
+    // Filter to food-related places, calculate distance, deduplicate
     const seen = new Set();
-    const places = elements
-      .filter(el => el.tags?.name)
-      .map(el => {
-        const dlat = (el.lat - lat) * 111320;
-        const dlng = (el.lon - lng) * 111320 * Math.cos(lat * Math.PI / 180);
+    const places = results
+      .filter(r => r.display_name && r.lat && r.lon)
+      .map(r => {
+        const rLat = parseFloat(r.lat), rLon = parseFloat(r.lon);
+        const dlat = (rLat - lat) * 111320;
+        const dlng = (rLon - lng) * 111320 * lonScale;
         const distM = Math.sqrt(dlat*dlat + dlng*dlng);
-        return { name: el.tags.name, cuisine: el.tags.cuisine || '', distM, lat: el.lat, lon: el.lon };
+        const name = r.name || r.display_name.split(',')[0];
+        const addr = r.address ?
+          [r.address.road, r.address.city||r.address.town||r.address.village].filter(Boolean).join(', ') : '';
+        return { name, addr, distM };
       })
-      .filter(p => { if (seen.has(p.name)) return false; seen.add(p.name); return true; })
+      .filter(p => p.name && !seen.has(p.name) && seen.add(p.name))
       .sort((a,b) => a.distM - b.distM)
       .slice(0, 20);
 
@@ -3370,11 +3374,10 @@ window.searchNearbyRestaurants = async function() {
 
     resultsEl.innerHTML = places.map(p => {
       const dist = (p.distM / 1609.34).toFixed(1) + ' mi';
-      const cuisineLabel = p.cuisine ? p.cuisine.replace(/_/g,' ').replace(/;/g, ', ') : '';
       return `<div class="picker-item picker-discover" data-name="${esc(p.name)}">
         <div style="flex:1;min-width:0">
           <div class="picker-item-name">${esc(p.name)}</div>
-          ${cuisineLabel ? `<div style="font-size:.7rem;color:var(--light);margin-top:.1rem">${esc(cuisineLabel)}</div>` : ''}
+          ${p.addr ? `<div style="font-size:.7rem;color:var(--light);margin-top:.1rem;overflow:hidden;text-overflow:ellipsis;white-space:nowrap">${esc(p.addr)}</div>` : ''}
         </div>
         <span style="font-size:.75rem;color:var(--mid);font-weight:600;white-space:nowrap;margin-left:.5rem">${dist}</span>
       </div>`;
