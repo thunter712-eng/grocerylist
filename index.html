@@ -1653,8 +1653,42 @@
   <div class="modal">
     <div class="modal-handle"></div>
     <div class="modal-title" id="picker-title">Choose a Meal</div>
-    <input type="text" class="picker-search" id="picker-search" placeholder="Search recipes or type any meal name…" oninput="filterPickerRecipes(this.value)" autocomplete="off">
-    <div class="picker-list" id="picker-list"></div>
+    <div class="planner-subtabs" style="margin-bottom:.75rem">
+      <button class="planner-subtab active" id="picker-tab-cook" onclick="setPickerMode('cook')">🏠 Cook</button>
+      <button class="planner-subtab" id="picker-tab-out" onclick="setPickerMode('out')">🍽️ Eat Out</button>
+    </div>
+    <!-- Cook mode -->
+    <div id="picker-cook-view">
+      <input type="text" class="picker-search" id="picker-search" placeholder="Search recipes or type any meal name…" oninput="filterPickerRecipes(this.value)" autocomplete="off">
+      <div class="picker-list" id="picker-list"></div>
+    </div>
+    <!-- Eat Out mode -->
+    <div id="picker-out-view" style="display:none">
+      <input type="text" class="picker-search" id="picker-out-search" placeholder="Type a restaurant name…" oninput="filterRestaurants(this.value)" autocomplete="off">
+      <div class="picker-list" id="picker-out-list"></div>
+      <div style="margin-top:.75rem;border-top:1px solid var(--border);padding-top:.75rem">
+        <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:.5rem">
+          <span style="font-size:.72rem;font-weight:700;color:var(--light);text-transform:uppercase;letter-spacing:.08em">Discover Nearby</span>
+          <span class="api-key-status" id="fsq-key-status" style="font-size:.62rem;cursor:pointer" onclick="toggleFsqKeyInput()">Not Set</span>
+        </div>
+        <div id="fsq-key-wrap" style="display:none;margin-bottom:.75rem">
+          <input type="password" class="form-input" id="fsq-key-input" placeholder="Foursquare API key" autocomplete="off" style="font-family:monospace;font-size:.8rem;margin-bottom:.4rem">
+          <div style="display:flex;gap:.5rem">
+            <button class="btn-save" style="flex:1;padding:.5rem;font-size:.78rem" onclick="saveFsqKey()">Save</button>
+            <button class="btn-cancel" style="flex:1;padding:.5rem;font-size:.78rem" onclick="clearFsqKey()">Clear</button>
+          </div>
+          <p style="font-size:.65rem;color:var(--light);margin-top:.35rem;line-height:1.4">Free at foursquare.com/developers — no credit card needed</p>
+        </div>
+        <input type="text" class="picker-search" id="fsq-cuisine-input" placeholder="What are you in the mood for? (e.g. Thai, pizza, sushi)" autocomplete="off" style="margin-bottom:.5rem">
+        <div style="display:flex;align-items:center;gap:.75rem;margin-bottom:.75rem">
+          <span style="font-size:.78rem;color:var(--mid);white-space:nowrap">Within</span>
+          <input type="range" id="fsq-radius" min="1" max="30" value="10" style="flex:1" oninput="document.getElementById('fsq-radius-label').textContent=this.value+' mi'">
+          <span style="font-size:.78rem;font-weight:600;color:var(--text);white-space:nowrap" id="fsq-radius-label">10 mi</span>
+        </div>
+        <button class="btn-save" style="width:100%;padding:.7rem;font-size:.85rem" onclick="searchNearbyRestaurants()">🔍 Search Nearby</button>
+        <div id="fsq-results" style="margin-top:.75rem"></div>
+      </div>
+    </div>
     <div style="margin-top:.875rem">
       <button class="btn-cancel" style="width:100%;padding:.9rem" onclick="closeRecipePicker()">Cancel</button>
     </div>
@@ -2106,7 +2140,10 @@ async function startApp() {
   // Load shared config (Claude API key)
   try {
     const cfgDoc = await getDoc(doc(db,'config','app'));
-    if (cfgDoc.exists()) claudeApiKey = cfgDoc.data().claudeKey || '';
+    if (cfgDoc.exists()) {
+      claudeApiKey = cfgDoc.data().claudeKey || '';
+      fsqApiKey    = cfgDoc.data().fsqKey    || '';
+    }
   } catch(_) {}
   // Items listener
   unsub = onSnapshot(collection(db,'items'), snap => {
@@ -3167,7 +3204,10 @@ window.openRecipePicker = function(day) {
   pickerDay = day;
   document.getElementById('picker-title').textContent = 'Choose a meal for ' + day;
   document.getElementById('picker-search').value = '';
+  setPickerMode('cook');
   renderPickerList('');
+  document.getElementById('fsq-results').innerHTML = '';
+  document.getElementById('fsq-cuisine-input').value = '';
   document.getElementById('recipe-picker-modal').style.display = 'flex';
   setTimeout(()=>document.getElementById('picker-search').focus(),150);
 };
@@ -3204,6 +3244,186 @@ function renderPickerList(query) {
   });
 }
 window.filterPickerRecipes = function(q) { renderPickerList(q); };
+
+// ── PICKER MODE (Cook vs Eat Out) ──
+let pickerMode = 'cook';
+let fsqApiKey  = '';
+let restaurantHistory = []; // unique past restaurant names, sorted by frequency
+
+window.setPickerMode = function(mode) {
+  pickerMode = mode;
+  document.getElementById('picker-tab-cook').classList.toggle('active', mode==='cook');
+  document.getElementById('picker-tab-out').classList.toggle('active',  mode==='out');
+  document.getElementById('picker-cook-view').style.display = mode==='cook' ? 'block' : 'none';
+  document.getElementById('picker-out-view').style.display  = mode==='out'  ? 'block' : 'none';
+  if (mode==='out') {
+    loadRestaurantHistory();
+    updateFsqKeyStatus();
+    document.getElementById('picker-out-search').value = '';
+    filterRestaurants('');
+    setTimeout(()=>document.getElementById('picker-out-search').focus(),100);
+  }
+};
+
+async function loadRestaurantHistory() {
+  const plans = await loadAllMealPlans();
+  const recipeIds = new Set(recipes.map(r=>r.id));
+  const freq = {};
+  plans.forEach(plan => {
+    (plan.meals||[]).forEach(meal => {
+      if (!meal.recipeName) return;
+      const isCustom = !meal.recipeId || !recipeIds.has(meal.recipeId);
+      if (!isCustom) return;
+      const key = meal.recipeName;
+      freq[key] = (freq[key]||0) + 1;
+    });
+  });
+  restaurantHistory = Object.entries(freq)
+    .sort((a,b) => b[1] - a[1])
+    .map(([name, count]) => ({ name, count }));
+}
+
+window.filterRestaurants = function(q) {
+  const el = document.getElementById('picker-out-list');
+  const query = q.trim().toLowerCase();
+
+  // Custom entry option
+  const customHtml = q.trim() ? `<div class="picker-item picker-custom-out" data-custom="${esc(q.trim())}">
+    <span class="picker-item-name" style="color:var(--forest-lite)">📝 Use "${esc(q.trim())}"</span>
+  </div>` : '';
+
+  // Filter restaurant history
+  const matches = restaurantHistory.filter(r =>
+    !query || r.name.toLowerCase().includes(query)
+  );
+
+  let html = customHtml;
+  if (matches.length) {
+    html += `<div style="padding:.5rem 1rem .25rem;font-size:.65rem;font-weight:700;color:var(--light);text-transform:uppercase;letter-spacing:.08em">Recent restaurants</div>`;
+    html += matches.slice(0,10).map(r => `
+      <div class="picker-item picker-restaurant" data-name="${esc(r.name)}">
+        <span class="picker-item-name">🍽️ ${esc(r.name)}</span>
+        <span style="font-size:.7rem;color:var(--light)">${r.count}×</span>
+      </div>`).join('');
+  } else if (!q.trim()) {
+    html += `<div style="padding:1.25rem;text-align:center;color:var(--light);font-size:.82rem">
+      Type a restaurant name, or use Discover Nearby below to search.
+    </div>`;
+  }
+
+  el.innerHTML = html;
+
+  // Bind click handlers
+  el.querySelectorAll('.picker-custom-out').forEach(item => {
+    item.addEventListener('click', () => selectCustomMealForDay(item.dataset.custom));
+  });
+  el.querySelectorAll('.picker-restaurant').forEach(item => {
+    item.addEventListener('click', () => selectCustomMealForDay(item.dataset.name));
+  });
+};
+
+// ── FOURSQUARE DISCOVER ──
+function updateFsqKeyStatus() {
+  const el = document.getElementById('fsq-key-status');
+  if (fsqApiKey) {
+    el.textContent = 'Key Set ✓';
+    el.className = 'api-key-status set';
+  } else {
+    el.textContent = 'No Key';
+    el.className = 'api-key-status unset';
+  }
+}
+
+window.toggleFsqKeyInput = function() {
+  const wrap = document.getElementById('fsq-key-wrap');
+  const shown = wrap.style.display !== 'none';
+  wrap.style.display = shown ? 'none' : 'block';
+  if (!shown) {
+    if (fsqApiKey) document.getElementById('fsq-key-input').value = fsqApiKey;
+    setTimeout(()=>document.getElementById('fsq-key-input').focus(),100);
+  }
+};
+
+window.saveFsqKey = async function() {
+  const key = document.getElementById('fsq-key-input').value.trim();
+  if (!key) return;
+  fsqApiKey = key;
+  await setDoc(doc(db,'config','app'), { fsqKey: key }, { merge: true });
+  document.getElementById('fsq-key-wrap').style.display = 'none';
+  updateFsqKeyStatus();
+  toast('Foursquare key saved!');
+};
+
+window.clearFsqKey = async function() {
+  fsqApiKey = '';
+  await setDoc(doc(db,'config','app'), { fsqKey: '' }, { merge: true });
+  document.getElementById('fsq-key-input').value = '';
+  document.getElementById('fsq-key-wrap').style.display = 'none';
+  updateFsqKeyStatus();
+  toast('Foursquare key cleared');
+};
+
+window.searchNearbyRestaurants = async function() {
+  const cuisine = document.getElementById('fsq-cuisine-input').value.trim();
+  if (!cuisine) { toast('Enter what kind of food you want'); return; }
+  if (!fsqApiKey) {
+    toggleFsqKeyInput();
+    toast('Set your Foursquare API key first');
+    return;
+  }
+
+  const resultsEl = document.getElementById('fsq-results');
+  resultsEl.innerHTML = '<div style="text-align:center;padding:1rem;color:var(--light);font-size:.85rem">Searching…</div>';
+
+  // Get user location
+  let lat, lng;
+  try {
+    const pos = await new Promise((resolve, reject) =>
+      navigator.geolocation.getCurrentPosition(resolve, reject, { timeout: 10000 })
+    );
+    lat = pos.coords.latitude;
+    lng = pos.coords.longitude;
+  } catch(e) {
+    resultsEl.innerHTML = '<div style="text-align:center;padding:1rem;color:var(--red);font-size:.82rem">Location access denied — enable it in your browser settings</div>';
+    return;
+  }
+
+  const radiusMiles = parseInt(document.getElementById('fsq-radius').value);
+  const radiusMeters = Math.round(radiusMiles * 1609.34);
+
+  try {
+    const resp = await fetch(
+      `https://api.foursquare.com/v3/places/search?query=${encodeURIComponent(cuisine)}&ll=${lat},${lng}&radius=${radiusMeters}&categories=13065&sort=DISTANCE&limit=15`,
+      { headers: { 'Authorization': fsqApiKey, 'Accept': 'application/json' } }
+    );
+    if (!resp.ok) throw new Error('API error ' + resp.status);
+    const data = await resp.json();
+    const places = data.results || [];
+
+    if (!places.length) {
+      resultsEl.innerHTML = '<div style="text-align:center;padding:1rem;color:var(--light);font-size:.85rem">No restaurants found — try different keywords or a larger radius</div>';
+      return;
+    }
+
+    resultsEl.innerHTML = places.map(p => {
+      const dist = p.distance ? (p.distance / 1609.34).toFixed(1) + ' mi' : '';
+      const addr = p.location?.formatted_address || p.location?.address || '';
+      return `<div class="picker-item picker-fsq" data-name="${esc(p.name)}">
+        <div style="flex:1;min-width:0">
+          <div class="picker-item-name">${esc(p.name)}</div>
+          <div style="font-size:.7rem;color:var(--light);margin-top:.1rem;white-space:nowrap;overflow:hidden;text-overflow:ellipsis">${esc(addr)}</div>
+        </div>
+        <span style="font-size:.75rem;color:var(--mid);font-weight:600;white-space:nowrap;margin-left:.5rem">${dist}</span>
+      </div>`;
+    }).join('');
+
+    resultsEl.querySelectorAll('.picker-fsq').forEach(item => {
+      item.addEventListener('click', () => selectCustomMealForDay(item.dataset.name));
+    });
+  } catch(e) {
+    resultsEl.innerHTML = `<div style="text-align:center;padding:1rem;color:var(--red);font-size:.82rem">Error: ${esc(e.message)}</div>`;
+  }
+};
 
 window.selectRecipeForDay = async function(recipeId, recipeName) {
   if (!pickerDay || !mealPlan) return;
