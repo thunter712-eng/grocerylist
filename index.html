@@ -3396,7 +3396,10 @@ window.searchNearbyRestaurants = async function() {
       `https://api.foursquare.com/v3/places/search?query=${encodeURIComponent(cuisine)}&ll=${lat},${lng}&radius=${radiusMeters}&categories=13065&sort=DISTANCE&limit=15`,
       { headers: { 'Authorization': fsqApiKey, 'Accept': 'application/json' } }
     );
-    if (!resp.ok) throw new Error('API error ' + resp.status);
+    if (!resp.ok) {
+      const errData = await resp.json().catch(()=>({}));
+      throw new Error(errData.message || 'API error ' + resp.status);
+    }
     const data = await resp.json();
     const places = data.results || [];
 
