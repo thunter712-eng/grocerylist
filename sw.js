@@ -1,11 +1,14 @@
 // Service worker: network-first strategy
 // Always tries the network for fresh content, falls back to cache when offline
 
-const CACHE_NAME = 'dwhf-v1';
+const CACHE_NAME = 'dwhf-v2';
 const ASSETS = [
   './',
   './index.html',
   './icon.png',
+  './icon-152.png',
+  './icon-167.png',
+  './icon-1024.png',
   './apple-touch-icon.png',
   './manifest.json'
 ];
