@@ -3413,17 +3413,19 @@ window.searchNearbyRestaurants = async function() {
       sort: 'DISTANCE'
     });
 
-    const resp = await fetch(`https://api.foursquare.com/v3/places/search?${params}`, {
-      headers: {
-        'Authorization': fsqApiKey,
-        'Accept': 'application/json'
-      }
+    const fsqUrl = `https://api.foursquare.com/v3/places/search?${params}`;
+    // Use CORS proxy to avoid browser CORS restrictions with Foursquare
+    const resp = await fetch('https://corsproxy.io/?' + encodeURIComponent(fsqUrl), {
+      headers: { 'Authorization': fsqApiKey, 'Accept': 'application/json' }
     });
 
-    if (resp.status === 401) {
+    if (resp.status === 401 || resp.status === 403) {
       throw new Error('Invalid API key — make sure you\'re using a regular API Key (starts with fsq3), not a Service API Key');
     }
-    if (!resp.ok) throw new Error(`Search failed (${resp.status}) — try again`);
+    if (!resp.ok) {
+      const body = await resp.text().catch(()=>'');
+      throw new Error(`Search failed (${resp.status})${body ? ': '+body.slice(0,100) : ''}`);
+    }
 
     const data = await resp.json();
     const results = data.results || [];
