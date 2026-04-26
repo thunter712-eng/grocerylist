@@ -3573,11 +3573,13 @@ async function renderInsightsContent() {
   }
 
   // Aggregate frequency and last-eaten date per meal
+  const INSIGHT_SKIP = ['yoyo','leftovers'];
   const stats = {};       // recipeName → { name, count, lastWeekOf, isCustom }
   const recipeIds = new Set(recipes.map(r => r.id));
   plans.forEach(plan => {
     (plan.meals||[]).forEach(meal => {
       if (!meal.recipeName) return;
+      if (INSIGHT_SKIP.includes(meal.recipeName.toLowerCase())) return;
       const key = meal.recipeName;
       const isCustom = !meal.recipeId || !recipeIds.has(meal.recipeId);
       if (!stats[key]) stats[key] = { name: meal.recipeName, count: 0, lastWeekOf: '', isCustom };
