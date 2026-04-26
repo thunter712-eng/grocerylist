@@ -3077,8 +3077,16 @@ function getWeekSunday(offset=0) {
   return sun;
 }
 
+// Format date as YYYY-MM-DD using LOCAL time (not UTC)
+function localDateStr(d) {
+  const y = d.getFullYear();
+  const m = String(d.getMonth()+1).padStart(2,'0');
+  const day = String(d.getDate()).padStart(2,'0');
+  return `${y}-${m}-${day}`;
+}
+
 function getMealPlanId(offset=0) {
-  return getWeekSunday(offset).toISOString().slice(0,10);
+  return localDateStr(getWeekSunday(offset));
 }
 
 function getOldMondayId(offset=0) {
@@ -3088,7 +3096,7 @@ function getOldMondayId(offset=0) {
   const sun = getWeekSunday(offset);
   const mon = new Date(sun);
   mon.setDate(sun.getDate() + 1);
-  return mon.toISOString().slice(0,10);
+  return localDateStr(mon);
 }
 
 function loadMealPlan(offset=0) {
@@ -3106,11 +3114,11 @@ function loadMealPlan(offset=0) {
       if (oldSnap.exists()) {
         const data = oldSnap.data();
         // Migrate to new Sunday-based ID
-        await setDoc(doc(db,'mealPlans',planId), { ...data, weekOf: getWeekSunday(offset).toISOString().slice(0,10) });
+        await setDoc(doc(db,'mealPlans',planId), { ...data, weekOf: localDateStr(getWeekSunday(offset)) });
         mealPlan = { id:planId, ...data };
         toast('Meal plan migrated to new week format ✓');
       } else {
-        mealPlan = { id:planId, weekOf:getWeekSunday(offset).toISOString().slice(0,10), meals:[] };
+        mealPlan = { id:planId, weekOf:localDateStr(getWeekSunday(offset)), meals:[] };
       }
     }
     if (view==='mealplan') renderMealPlan();
@@ -3439,7 +3447,7 @@ window.selectRecipeForDay = async function(recipeId, recipeName) {
   const meals = [...(mealPlan.meals||[]).filter(m=>m.day!==day),
                   { day, recipeId, recipeName, servings:4 }];
   await setDoc(doc(db,'mealPlans',planId),
-    { weekOf:getWeekSunday(weekOffset).toISOString().slice(0,10), meals, createdAt:serverTimestamp() },
+    { weekOf:localDateStr(getWeekSunday(weekOffset)), meals, createdAt:serverTimestamp() },
     { merge:true });
   allMealPlansCache = null;
 };
@@ -3452,7 +3460,7 @@ window.selectCustomMealForDay = async function(name) {
   const meals = [...(mealPlan.meals||[]).filter(m=>m.day!==day),
                   { day, recipeId: null, recipeName: name, servings: 4 }];
   await setDoc(doc(db,'mealPlans',planId),
-    { weekOf:getWeekSunday(weekOffset).toISOString().slice(0,10), meals, createdAt:serverTimestamp() },
+    { weekOf:localDateStr(getWeekSunday(weekOffset)), meals, createdAt:serverTimestamp() },
     { merge:true });
   allMealPlansCache = null;
 };
@@ -3461,7 +3469,7 @@ window.clearMealDay = async function(day) {
   if (!mealPlan) return;
   const meals = (mealPlan.meals||[]).filter(m=>m.day!==day && m.day!=null);
   await setDoc(doc(db,'mealPlans',mealPlan.id),
-    { weekOf:getWeekSunday(weekOffset).toISOString().slice(0,10), meals, createdAt:serverTimestamp() },
+    { weekOf:localDateStr(getWeekSunday(weekOffset)), meals, createdAt:serverTimestamp() },
     { merge:true });
   allMealPlansCache = null; // invalidate cache after changes
 };
@@ -3472,17 +3480,38 @@ async function loadAllMealPlans() {
   if (allMealPlansCache) return allMealPlansCache;
   try {
     const snap = await getDocs(collection(db, 'mealPlans'));
-    allMealPlansCache = snap.docs
-      .map(d => {
-        const p = { id: d.id, ...d.data() };
-        // Normalize weekOf: Firestore Timestamp → string "YYYY-MM-DD"
-        if (p.weekOf && typeof p.weekOf !== 'string') {
-          const dt = p.weekOf.toDate ? p.weekOf.toDate() : new Date(p.weekOf);
-          p.weekOf = dt.toISOString().slice(0,10);
+    // Deduplicate plans that map to the same Sunday (from UTC date bug)
+    const byWeek = new Map();
+    snap.docs.forEach(d => {
+      const p = { id: d.id, ...d.data() };
+      // Normalize weekOf: Firestore Timestamp → string "YYYY-MM-DD"
+      if (p.weekOf && typeof p.weekOf !== 'string') {
+        const dt = p.weekOf.toDate ? p.weekOf.toDate() : new Date(p.weekOf);
+        p.weekOf = localDateStr(dt);
+      }
+      // Snap weekOf to nearest Sunday (fixes UTC-shifted dates landing on Saturday)
+      if (p.weekOf) {
+        const dt = new Date(p.weekOf + 'T12:00:00');
+        const dow = dt.getDay();
+        if (dow !== 0) {
+          // If Saturday (6), move forward 1 day to Sunday; otherwise back to previous Sunday
+          dt.setDate(dt.getDate() + (dow === 6 ? 1 : -dow));
+          p.weekOf = localDateStr(dt);
         }
-        return p;
-      })
-      .filter(p => p.weekOf && (p.meals||[]).length > 0)
+      }
+      if (!p.weekOf || !(p.meals||[]).length) return;
+      // Merge meals from duplicate week entries
+      if (byWeek.has(p.weekOf)) {
+        const existing = byWeek.get(p.weekOf);
+        const existingDays = new Set(existing.meals.map(m=>m.day));
+        (p.meals||[]).forEach(m => {
+          if (!existingDays.has(m.day)) existing.meals.push(m);
+        });
+      } else {
+        byWeek.set(p.weekOf, p);
+      }
+    });
+    allMealPlansCache = [...byWeek.values()]
       .sort((a,b) => b.weekOf.localeCompare(a.weekOf)); // newest first
   } catch(e) {
     console.error('Failed to load meal plans:', e);
@@ -3524,7 +3553,7 @@ async function renderHistoryContent() {
 
     return `<div class="history-week">
       <div class="history-week-header">
-        <span>${fmt(weekStart)} – ${fmt(weekEnd.toISOString().slice(0,10))}</span>
+        <span>${fmt(weekStart)} – ${fmt(localDateStr(weekEnd))}</span>
         ${isCurrent ? '<span class="history-week-badge">This Week</span>' : ''}
       </div>
       ${rows}
@@ -3736,7 +3765,7 @@ function initWidget() {
     const sun = new Date(now);
     sun.setDate(now.getDate() - now.getDay());
     sun.setHours(0,0,0,0);
-    return sun.toISOString().slice(0,10);
+    return localDateStr(sun);
   }
 
   let currentPlanId = weekSundayId();
