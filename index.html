@@ -2206,9 +2206,14 @@ function renderList() {
     sorted.forEach(item => {
       const c = item.checked?.[store]||false;
       const mismatch = item.preferredStore && item.preferredStore !== store;
+      const aisle = s.aisles.find(a => a.cats.includes(item.category));
+      const aisleLabel = aisle ? aisle.label : '';
       html += `<div class="item-row${c?' done':''}${mismatch?' other-store':''}">
         <button class="check-btn${c?' done':''}" onclick="toggle('${item.id}')">${c?'✓':''}</button>
-        <span class="item-name">${esc(item.name)}</span>
+        <div style="flex:1;min-width:0">
+          <span class="item-name">${esc(item.name)}</span>
+          ${aisleLabel ? `<div style="font-size:.68rem;color:var(--light);margin-top:.1rem">${esc(aisleLabel)}</div>` : ''}
+        </div>
         <button class="del-btn" onclick="removeFromList('${item.id}')">✕</button>
       </div>`;
     });
