@@ -663,18 +663,7 @@
       letter-spacing: .02em; line-height: 1.4;
     }
     .store-pref-btn.active { background: var(--forest); border-color: var(--forest); color: white; }
-    /* Pantry check section */
-    .pantry-section { margin-bottom: 1.25rem; }
-    .pantry-header {
-      display: flex; align-items: center; gap: .5rem;
-      padding: .35rem .25rem .5rem;
-      font-size: .7rem; font-weight: 700;
-      color: #8b6914; letter-spacing: .09em; text-transform: uppercase;
-    }
-    .pantry-header::before {
-      content: ''; width: 4px; height: 4px;
-      background: #c4920a; border-radius: 50%; flex-shrink: 0;
-    }
+    /* Pantry check badge */
     .pantry-badge {
       background: #c4920a; color: white;
       font-size: .6rem; font-weight: 700;
@@ -2195,33 +2184,8 @@ function renderList() {
   let html='', anyShown=false;
   const allCats = s.aisles.flatMap(a=>a.cats);
 
-  // ── Pantry Check section (condiments, spices, oils — likely already stocked) ──
-  const pantryItems = act.filter(i => PANTRY_CATS.has(i.category));
-  if (pantryItems.length) {
-    anyShown = true;
-    const sorted = [...pantryItems.filter(i=>!i.checked?.[store]), ...pantryItems.filter(i=>i.checked?.[store])];
-    html += `<div class="pantry-section">
-      <div class="pantry-header"><span class="pantry-badge">PANTRY CHECK</span>Verify you have these before buying</div>
-      <div class="item-list">`;
-    sorted.forEach(item => {
-      const c = item.checked?.[store]||false;
-      const mismatch = item.preferredStore && item.preferredStore !== store;
-      const aisle = s.aisles.find(a => a.cats.includes(item.category));
-      const aisleLabel = aisle ? aisle.label : '';
-      html += `<div class="item-row${c?' done':''}${mismatch?' other-store':''}">
-        <button class="check-btn${c?' done':''}" onclick="toggle('${item.id}')">${c?'✓':''}</button>
-        <div style="flex:1;min-width:0">
-          <span class="item-name">${esc(item.name)}</span>
-          ${aisleLabel ? `<div style="font-size:.68rem;color:var(--light);margin-top:.1rem">${esc(aisleLabel)}</div>` : ''}
-        </div>
-        <button class="del-btn" onclick="removeFromList('${item.id}')">✕</button>
-      </div>`;
-    });
-    html += '</div></div>';
-  }
-
   s.aisles.forEach(aisle => {
-    const ai = act.filter(i=>aisle.cats.includes(i.category) && !PANTRY_CATS.has(i.category));
+    const ai = act.filter(i=>aisle.cats.includes(i.category));
     if (!ai.length) return;
     anyShown = true;
     const sorted = [...ai.filter(i=>!i.checked?.[store]), ...ai.filter(i=>i.checked?.[store])];
@@ -2231,16 +2195,17 @@ function renderList() {
     sorted.forEach(item => {
       const c = item.checked?.[store]||false;
       const mismatch = item.preferredStore && item.preferredStore !== store;
+      const isPantry = PANTRY_CATS.has(item.category);
       html += `<div class="item-row${c?' done':''}${mismatch?' other-store':''}">
         <button class="check-btn${c?' done':''}" onclick="toggle('${item.id}')">${c?'✓':''}</button>
-        <span class="item-name">${esc(item.name)}</span>
+        <span class="item-name">${esc(item.name)}${isPantry ? ' <span class="pantry-badge" style="font-size:.55rem;padding:.1rem .35rem;vertical-align:middle;margin-left:.35rem">PANTRY CHECK</span>':''}</span>
         <button class="del-btn" onclick="removeFromList('${item.id}')">✕</button>
       </div>`;
     });
     html += '</div></div>';
   });
 
-  const unk = act.filter(i=>!allCats.includes(i.category) && !PANTRY_CATS.has(i.category));
+  const unk = act.filter(i=>!allCats.includes(i.category));
   if (unk.length) {
     anyShown = true;
     html += `<div class="aisle-section">
