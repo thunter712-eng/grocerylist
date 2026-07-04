@@ -1,0 +1,167 @@
+/* ════════════════════════════════════════════════════════════════
+   BACKUP: original "Hunter's Hearth" chalkboard widget theme
+   (warm parchment + brown ink, pre-Cubs re-theme)
+   Saved 2026-07-04, last used through v9.
+
+   TO RESTORE: in index.html, find the widget CSS block starting at
+   "#widget-view {" and ending at the closing brace of ".wg-desc",
+   and replace it with everything below (from #widget-view down
+   through .wg-desc). Then bump CACHE_NAME in sw.js and the version
+   label in index.html, commit, and push.
+   ════════════════════════════════════════════════════════════════ */
+
+#widget-view {
+  position: fixed; inset: 0;
+  background: #ede8db;
+  display: none;
+  padding: 3%;
+  font-family: 'Playfair Display', serif;
+}
+#widget-view.show { display: flex; }
+.wg-frame {
+  flex: 1; height: 100%;
+  display: flex; flex-direction: column;
+  border: 1.5px solid rgba(90,65,35,.22);
+  border-radius: 2px;
+  padding: 2.5% 6% 2%;
+  position: relative;
+  box-sizing: border-box;
+  box-shadow: inset 0 0 0 5px #ede8db, inset 0 0 0 6px rgba(90,65,35,.13);
+}
+/* Corner ornaments */
+.wg-corner {
+  position: absolute;
+  font-size: clamp(.7rem, 1.8vw, 1.1rem);
+  color: rgba(90,65,35,.4);
+  line-height: 1;
+  font-style: normal;
+}
+.wg-corner::before { content: '❧'; }
+.wg-corner.tl { top:.4em; left:.5em; transform: scaleX(-1) rotate(180deg); }
+.wg-corner.tr { top:.4em; right:.5em; transform: rotate(180deg); }
+.wg-corner.bl { bottom:.4em; left:.5em; }
+.wg-corner.br { bottom:.4em; right:.5em; transform: scaleX(-1); }
+.wg-title {
+  text-align: center;
+  padding: .2em 0 0;
+  flex-shrink: 0;
+}
+.wg-restaurant-name {
+  font-family: 'Playfair Display', serif;
+  font-style: normal;
+  font-size: clamp(1.8rem, 5.5vw, 4rem);
+  font-weight: 700;
+  color: #3a2c1a;
+  letter-spacing: .2em;
+  text-transform: uppercase;
+  line-height: 1.1;
+}
+.wg-subtitle {
+  font-family: 'DM Sans', sans-serif;
+  font-size: clamp(.75rem, 1.8vw, 1.3rem);
+  font-weight: 400;
+  color: #9a8060;
+  letter-spacing: .28em;
+  text-transform: uppercase;
+  margin-top: .15em;
+}
+.wg-divider {
+  display: flex; align-items: center; gap: .4em;
+  margin: .3em 0;
+  flex-shrink: 0;
+  color: #9a8060;
+  font-size: clamp(.9rem, 2.2vw, 1.6rem);
+}
+.wg-divider::before,
+.wg-divider::after {
+  content: '';
+  flex: 1;
+  height: 1px;
+  background: rgba(90,65,35,.2);
+}
+.wg-days {
+  flex: 1;
+  display: grid;
+  grid-template-rows: repeat(7, 1fr);
+  min-height: 0;
+}
+.wg-day {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  min-height: 0; overflow: hidden;
+  border-bottom: 1px solid rgba(90,65,35,.1);
+  padding: .3% 0;
+}
+.wg-day:last-child { border-bottom: none; }
+.wg-day-header {
+  display: flex; align-items: center; gap: .5em;
+  width: 100%;
+}
+.wg-day-header::before,
+.wg-day-header::after {
+  content: '';
+  flex: 1; height: 1px;
+  background: rgba(90,65,35,.18);
+}
+.wg-name {
+  font-family: 'Playfair Display', serif;
+  font-size: clamp(1rem, 2.6vw, 1.8rem);
+  color: #3a2c1a;
+  text-transform: uppercase;
+  letter-spacing: .14em;
+  font-weight: 700;
+  white-space: nowrap;
+  flex-shrink: 0;
+}
+.wg-day.today {
+  background: rgba(160,110,20,.08);
+  border-radius: 4px;
+  padding: .5% 2%;
+  margin: 0 -2%;
+}
+.wg-day.today .wg-day-header::before,
+.wg-day.today .wg-day-header::after { background: rgba(160,110,20,.35); }
+.wg-day.today .wg-name {
+  color: #7a4a10;
+  font-size: clamp(1.3rem, 3.4vw, 2.3rem);
+  letter-spacing: .18em;
+}
+.wg-tonight-label {
+  font-family: 'DM Sans', sans-serif;
+  font-size: clamp(.5rem, 1.2vw, .8rem);
+  font-weight: 700;
+  color: #b07820;
+  letter-spacing: .2em;
+  text-transform: uppercase;
+  margin-bottom: .1em;
+}
+.wg-meal-block {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  text-align: center;
+  width: 100%;
+  min-width: 0;
+  overflow: hidden;
+}
+.wg-meal {
+  font-family: 'Playfair Display', serif;
+  font-size: clamp(.85rem, 2.2vw, 1.45rem);
+  color: #4a3520;
+  font-weight: 400;
+  line-height: 1.25;
+}
+.wg-day.today .wg-meal {
+  font-weight: 700;
+  color: #3a2010;
+}
+.wg-meal.empty { color: rgba(90,65,35,.28); font-style: italic; font-weight: 300; }
+.wg-desc {
+  font-family: 'Playfair Display', serif;
+  font-style: italic;
+  font-size: clamp(.65rem, 1.6vw, 1rem);
+  color: #9a8060;
+  line-height: 1.2;
+}
