@@ -1429,6 +1429,16 @@
       color: rgba(255,255,255,.5);
       line-height: 1.2;
     }
+    .wg-cubs {
+      font-family: 'DM Sans', sans-serif;
+      font-size: clamp(.55rem, 1.3vw, .82rem);
+      font-weight: 600;
+      color: rgba(255,255,255,.42);
+      letter-spacing: .03em;
+      margin-top: .2em;
+    }
+    .wg-cubs.live { color: #F07070; animation: cubslive 1.6s ease-in-out infinite; }
+    @keyframes cubslive { 0%,100% { opacity: 1; } 50% { opacity: .55; } }
 
     /* ════════════════ DESKTOP LAYOUT ════════════════ */
     @media (min-width: 768px) {
@@ -1553,7 +1563,7 @@
     <button class="login-btn" id="login-btn">Unlock List →</button>
   </div>
   <!-- Version label: keep in sync with CACHE_NAME in sw.js on every release -->
-  <div style="position:relative;z-index:1;margin-top:1.1rem;color:rgba(255,255,255,.38);font-size:.7rem;font-weight:600;letter-spacing:.1em">v11</div>
+  <div style="position:relative;z-index:1;margin-top:1.1rem;color:rgba(255,255,255,.38);font-size:.7rem;font-weight:600;letter-spacing:.1em">v12</div>
 </div>
 
 <!-- ── TOAST ── -->
@@ -3957,33 +3967,82 @@ async function doGenerateGroceryList(ingredientText) {
 // ════════════════════════════════════════════════
 // 📺 CHALKBOARD WIDGET  (?widget=1)
 // ════════════════════════════════════════════════
+// ── CUBS SCHEDULE (MLB Stats API — free, unauthenticated, no key needed) ──
+// Routed through the Cloudflare Worker's /fetch proxy like recipe URLs, to
+// sidestep any CORS uncertainty on statsapi.mlb.com.
+const CUBS_TEAM_ID = 112;
+async function loadCubsWeek(sunday) {
+  try {
+    const start = localDateStr(sunday);
+    const endDate = new Date(sunday); endDate.setDate(endDate.getDate()+6);
+    const end = localDateStr(endDate);
+    const apiUrl = `https://statsapi.mlb.com/api/v1/schedule?sportId=1&teamId=${CUBS_TEAM_ID}&startDate=${start}&endDate=${end}&hydrate=team,linescore`;
+    const resp = await fetch(WORKER_URL + '/fetch?url=' + encodeURIComponent(apiUrl));
+    if (!resp.ok) return {};
+    const data = await resp.json();
+    const byDate = {};
+    (data.dates||[]).forEach(d => {
+      const g = d.games && d.games[0];
+      if (!g) return;
+      const summary = summarizeCubsGame(g);
+      if (summary) byDate[d.date] = summary;
+    });
+    return byDate;
+  } catch(_) {
+    return {}; // offline or API hiccup — widget just shows no game info
+  }
+}
+
+function summarizeCubsGame(g) {
+  const home = g.teams.home, away = g.teams.away;
+  const cubsHome = home.team.id === CUBS_TEAM_ID;
+  const us = cubsHome ? home : away, them = cubsHome ? away : home;
+  const opp = them.team.abbreviation || them.team.teamName || '';
+  const vsAt = cubsHome ? 'vs' : '@';
+  const state = g.status.abstractGameState;
+
+  if (state === 'Final') {
+    if (us.score == null || them.score == null) return null;
+    const win = us.score > them.score;
+    return { text: `${win?'W':'L'} ${us.score}-${them.score} ${vsAt} ${opp}`, live:false, win };
+  }
+  if (state === 'Live') {
+    return { text: `LIVE ${us.score ?? 0}-${them.score ?? 0} ${vsAt} ${opp}`, live:true };
+  }
+  // Preview / scheduled
+  const time = new Date(g.gameDate).toLocaleTimeString([], { hour:'numeric', minute:'2-digit' });
+  return { text: `${time} ${vsAt} ${opp}`, live:false };
+}
+
 function initWidget() {
   document.getElementById('login-screen').style.display = 'none';
   document.getElementById('widget-view').classList.add('show');
 
   let widgetRecipes = [];
   let currentMeals  = [];
+  let cubsByDate     = {};
 
   // Subscribe to recipes so we can show ingredient descriptions
   onSnapshot(collection(db,'recipes'), snap => {
     widgetRecipes = snap.docs.map(d=>({id:d.id,...d.data()}));
-    renderWidget(currentMeals, widgetRecipes);
+    renderWidget(currentMeals, widgetRecipes, cubsByDate);
   }, () => {});
 
-  function weekSundayId() {
+  function weekSunday() {
     const now = new Date();
     const sun = new Date(now);
     sun.setDate(now.getDate() - now.getDay());
     sun.setHours(0,0,0,0);
-    return localDateStr(sun);
+    return sun;
   }
+  function weekSundayId() { return localDateStr(weekSunday()); }
 
   let currentPlanId = weekSundayId();
 
   function subscribe(planId) {
     return onSnapshot(doc(db,'mealPlans',planId), snap=>{
       currentMeals = snap.exists() ? (snap.data().meals||[]) : [];
-      renderWidget(currentMeals, widgetRecipes);
+      renderWidget(currentMeals, widgetRecipes, cubsByDate);
     }, err => {
       document.getElementById('wg-days').innerHTML =
         '<div style="grid-row:1/-1;display:flex;align-items:center;justify-content:center;text-align:center;color:rgba(255,255,255,.55);font-style:italic;padding:2rem">Could not load the menu — check the network connection.</div>';
@@ -3991,6 +4050,16 @@ function initWidget() {
   }
 
   let unsub = subscribe(currentPlanId);
+
+  function refreshCubsSchedule() {
+    loadCubsWeek(weekSunday()).then(byDate => {
+      cubsByDate = byDate;
+      renderWidget(currentMeals, widgetRecipes, cubsByDate);
+    });
+  }
+  refreshCubsSchedule();
+  // Catches final scores landing + game-day time drift; cheap and infrequent
+  setInterval(refreshCubsSchedule, 30 * 60 * 1000);
 
   // Re-subscribe at midnight when the week rolls over
   function scheduleMidnightRefresh() {
@@ -4002,14 +4071,16 @@ function initWidget() {
       unsub();
       currentPlanId = weekSundayId();
       unsub = subscribe(currentPlanId);
+      refreshCubsSchedule();
       scheduleMidnightRefresh();
     }, midnight - now);
   }
   scheduleMidnightRefresh();
 }
 
-function renderWidget(meals, widgetRecipes) {
+function renderWidget(meals, widgetRecipes, cubsByDate) {
   widgetRecipes = widgetRecipes || [];
+  cubsByDate = cubsByDate || {};
   const DAYS = ['Sunday','Monday','Tuesday','Wednesday','Thursday','Friday','Saturday'];
   const now  = new Date();
   const day  = now.getDay();
@@ -4020,6 +4091,7 @@ function renderWidget(meals, widgetRecipes) {
     const date = new Date(sun); date.setDate(sun.getDate()+i);
     const meal = meals.find(m=>m.day===name);
     const isToday = date.getTime()===today.getTime();
+    const cubs = cubsByDate[localDateStr(date)];
     let desc = '';
     if (meal && meal.recipeId) {
       const recipe = widgetRecipes.find(r=>r.id===meal.recipeId);
@@ -4035,6 +4107,7 @@ function renderWidget(meals, widgetRecipes) {
         ${isToday ? `<span class="wg-tonight-label">Tonight</span>` : ''}
         <span class="wg-meal${meal?'':' empty'}">${meal ? esc(meal.recipeName) : '—'}</span>
         ${desc ? `<span class="wg-desc">${esc(desc)}</span>` : ''}
+        ${cubs ? `<span class="wg-cubs${cubs.live?' live':''}">⚾ ${esc(cubs.text)}</span>` : ''}
       </div>
     </div>`;
   }).join('');
