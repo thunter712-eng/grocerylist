@@ -250,8 +250,9 @@
     .header {
       background: linear-gradient(150deg, var(--hdr-g1) 0%, var(--hdr-g2) 60%, var(--hdr-g3) 100%);
       color: white;
-      /* keep clear of the iPhone notch / Dynamic Island in standalone mode */
-      padding: calc(1rem + env(safe-area-inset-top)) 1rem .875rem;
+      /* Header chrome uses fixed px (not rem) so the A−/A+ list-text control
+         never squeezes the title. Also keeps clear of the notch. */
+      padding: calc(14px + env(safe-area-inset-top)) 14px 12px;
       position: sticky; top: 0; z-index: 100;
       box-shadow: 0 2px 24px rgba(13,35,24,.45);
     }
@@ -259,22 +260,22 @@
       display: flex;
       justify-content: space-between;
       align-items: center;
-      margin-bottom: .875rem;
+      margin-bottom: 12px;
     }
     .header-title {
       font-family: 'Playfair Display', Georgia, serif;
       font-style: italic;
       font-weight: 600;
-      font-size: 1.2rem;
+      font-size: 19px;
       letter-spacing: -.01em;
       flex: 1;
       min-width: 0;
       white-space: nowrap;
       overflow: hidden;
       text-overflow: ellipsis;
-      margin-right: .5rem;
+      margin-right: 8px;
     }
-    .hdr-btns { display: flex; gap: .4rem; align-items: center; }
+    .hdr-btns { display: flex; gap: 5px; align-items: center; }
     /* Trip-progress badge, floating on the header's bottom edge */
     .progress-chip {
       position: absolute;
@@ -295,11 +296,12 @@
       background: rgba(255,255,255,.1);
       border: 1px solid rgba(255,255,255,.14);
       color: rgba(255,255,255,.8);
-      width: 36px; height: 36px;
-      border-radius: 10px;
+      width: 32px; height: 32px;
+      border-radius: 9px;
       cursor: pointer;
-      font-size: 1rem;
+      font-size: 16px;
       display: flex; align-items: center; justify-content: center;
+      flex-shrink: 0;
       transition: background .15s, color .15s;
     }
     .icon-btn:active { background: rgba(255,255,255,.22); color: white; }
@@ -310,14 +312,14 @@
     }
     .font-ctrl button {
       background: none; border: none; color: rgba(255,255,255,.7);
-      cursor: pointer; padding: .3rem .45rem;
+      cursor: pointer; padding: 6px 7px;
       font-family: inherit; line-height: 1;
       transition: background .12s, color .12s;
     }
     .font-ctrl button:active { background: rgba(255,255,255,.15); color: white; }
     .font-ctrl button:disabled { opacity: .3; cursor: default; }
-    .font-ctrl .fc-a1 { font-size: .72rem; font-weight: 700; }
-    .font-ctrl .fc-a2 { font-size: .95rem; font-weight: 700; border-left: 1px solid rgba(255,255,255,.12); }
+    .font-ctrl .fc-a1 { font-size: 11px; font-weight: 700; }
+    .font-ctrl .fc-a2 { font-size: 14px; font-weight: 700; border-left: 1px solid rgba(255,255,255,.12); }
 
     /* ── STORE TABS ── */
     .store-tabs {
@@ -329,12 +331,12 @@
     }
     .store-tab {
       flex: 1;
-      padding: .5rem .25rem;
+      padding: 8px 4px;
       background: transparent;
       border: none;
       color: rgba(255,255,255,.5);
       font-family: 'DM Sans', sans-serif;
-      font-size: .7rem;
+      font-size: 11px;
       font-weight: 700;
       cursor: pointer;
       border-radius: 9px;
@@ -366,7 +368,9 @@
       border-bottom: 1px solid var(--border);
       padding: 0 1rem;
       position: sticky;
-      top: calc(91px + env(safe-area-inset-top));
+      /* --hdr-h is measured in JS — the header's real height, whatever the
+         font size or safe-area inset happens to be */
+      top: var(--hdr-h, 100px);
       z-index: 90;
     }
     .nav-tab {
@@ -1542,7 +1546,7 @@
     <button class="login-btn" id="login-btn">Unlock List →</button>
   </div>
   <!-- Version label: keep in sync with CACHE_NAME in sw.js on every release -->
-  <div style="position:relative;z-index:1;margin-top:1.1rem;color:rgba(255,255,255,.38);font-size:.7rem;font-weight:600;letter-spacing:.1em">v8</div>
+  <div style="position:relative;z-index:1;margin-top:1.1rem;color:rgba(255,255,255,.38);font-size:.7rem;font-weight:600;letter-spacing:.1em">v9</div>
 </div>
 
 <!-- ── TOAST ── -->
@@ -2177,7 +2181,21 @@ function applyFontSize(px) {
   const up   = document.getElementById('fc-up');
   if (down) down.disabled = idx <= 0;
   if (up)   up.disabled   = idx >= FONT_STEPS.length - 1;
+  syncHeaderOffset();
 }
+
+// Keep the nav-tabs sticky offset matched to the header's actual height
+// (it varies with safe-area insets and can't be hardcoded)
+function syncHeaderOffset() {
+  requestAnimationFrame(() => {
+    const h = document.querySelector('.header');
+    if (h && h.offsetHeight) {
+      document.documentElement.style.setProperty('--hdr-h', h.offsetHeight + 'px');
+    }
+  });
+}
+window.addEventListener('resize', syncHeaderOffset);
+window.addEventListener('load', syncHeaderOffset);
 
 window.adjustFontSize = function(dir) {
   const cur = getCurrentFontSize();
