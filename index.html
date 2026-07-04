@@ -1272,9 +1272,16 @@
        var()) so the widget looks the same regardless of device dark-mode
        setting. Original brown-parchment theme backed up in
        widget-theme-backups/brown-parchment.css */
+    /* "Pinstripe Jersey" theme — white field + Cubbie-blue pinstripes,
+       like the home uniform. Hardcoded (not tied to var()) so the widget
+       looks the same regardless of device dark-mode setting. Previous
+       "Wrigley Marquee" theme backed up in
+       widget-theme-backups/wrigley-marquee.css */
     #widget-view {
       position: fixed; inset: 0;
-      background: radial-gradient(ellipse at 30% 20%, #16418F 0%, #0E3386 55%, #071B4D 100%);
+      background: repeating-linear-gradient(90deg,
+        transparent 0, transparent 20px,
+        rgba(14,51,134,.16) 20px, rgba(14,51,134,.16) 22px), #FDFDFC;
       display: none;
       padding: 3%;
       font-family: 'Playfair Display', serif;
@@ -1283,18 +1290,18 @@
     .wg-frame {
       flex: 1; height: 100%;
       display: flex; flex-direction: column;
-      border: 1.5px solid rgba(224,85,85,.4);
+      border: 2px solid rgba(204,52,51,.55);
       border-radius: 2px;
       padding: 2.5% 6% 2%;
       position: relative;
       box-sizing: border-box;
-      box-shadow: inset 0 0 0 5px #0E3386, inset 0 0 0 6px rgba(255,255,255,.1);
+      box-shadow: inset 0 0 0 5px #FDFDFC, inset 0 0 0 6px rgba(14,51,134,.18);
     }
     /* Corner ornaments */
     .wg-corner {
       position: absolute;
       font-size: clamp(.7rem, 1.8vw, 1.1rem);
-      color: rgba(224,85,85,.55);
+      color: rgba(204,52,51,.55);
       line-height: 1;
       font-style: normal;
     }
@@ -1311,30 +1318,27 @@
     .wg-restaurant-name {
       font-family: 'Playfair Display', serif;
       font-style: normal;
-      /* Trimmed from clamp(1.8rem,5.5vw,4rem) to make room for the bigger
-         per-day game line below — still the dominant element on the board. */
       font-size: clamp(1.5rem, 4vw, 2.8rem);
       font-weight: 700;
-      color: #F6F6F2;
+      color: #0E3386;
       letter-spacing: .2em;
       text-transform: uppercase;
       line-height: 1.1;
-      text-shadow: 0 0 18px rgba(224,85,85,.35);
     }
     .wg-subtitle {
       font-family: 'DM Sans', sans-serif;
       font-size: clamp(.65rem, 1.4vw, 1rem);
       font-weight: 400;
-      color: rgba(255,255,255,.55);
+      color: rgba(14,51,134,.55);
       letter-spacing: .28em;
       text-transform: uppercase;
       margin-top: .15em;
     }
     .wg-divider {
       display: flex; align-items: center; gap: .4em;
-      margin: .2em 0;
+      margin: .25em 0;
       flex-shrink: 0;
-      color: #E05555;
+      color: #CC3433;
       font-size: clamp(.7rem, 1.6vw, 1.15rem);
     }
     .wg-divider::before,
@@ -1342,7 +1346,7 @@
       content: '';
       flex: 1;
       height: 1px;
-      background: rgba(255,255,255,.2);
+      background: rgba(14,51,134,.25);
     }
     .wg-days {
       flex: 1;
@@ -1356,8 +1360,8 @@
       align-items: center;
       justify-content: center;
       min-height: 0; overflow: hidden;
-      border-bottom: 1px solid rgba(255,255,255,.1);
-      padding: .1% 0;
+      border-bottom: 1px solid rgba(14,51,134,.14);
+      padding: .2% 0;
     }
     .wg-day:last-child { border-bottom: none; }
     .wg-day-header {
@@ -1368,15 +1372,12 @@
     .wg-day-header::after {
       content: '';
       flex: 1; height: 1px;
-      background: rgba(255,255,255,.18);
+      background: rgba(14,51,134,.2);
     }
     .wg-name {
       font-family: 'Playfair Display', serif;
-      /* Trimmed from clamp(1rem,2.6vw,1.8rem) — every day now shows a
-         meal-size Cubs line too (not just "today"), so the baseline row
-         needed to shrink, not just the special-cased today row. */
       font-size: clamp(.9rem, 2.2vw, 1.55rem);
-      color: #E8ECF6;
+      color: #0E3386;
       text-transform: uppercase;
       letter-spacing: .13em;
       font-weight: 700;
@@ -1384,27 +1385,23 @@
       flex-shrink: 0;
     }
     .wg-day.today {
-      background: rgba(224,85,85,.16);
+      background: rgba(204,52,51,.08);
       border-radius: 4px;
       padding: .5% 2%;
       margin: 0 -2%;
     }
     .wg-day.today .wg-day-header::before,
-    .wg-day.today .wg-day-header::after { background: rgba(224,85,85,.5); }
+    .wg-day.today .wg-day-header::after { background: rgba(204,52,51,.4); }
     .wg-day.today .wg-name {
-      color: #FF8A85;
-      /* Trimmed from the original clamp(1.3rem,3.4vw,2.3rem) — that plus the
-         Tonight label and a game line no longer fit today's row at common
-         1080p display heights. Still visibly bigger than the other days. */
+      color: #CC3433;
       font-size: clamp(1rem, 2.5vw, 1.7rem);
       letter-spacing: .16em;
-      text-shadow: 0 0 14px rgba(224,85,85,.5);
     }
     .wg-tonight-label {
       font-family: 'DM Sans', sans-serif;
       font-size: clamp(.5rem, 1.2vw, .8rem);
       font-weight: 700;
-      color: #F07070;
+      color: #CC3433;
       letter-spacing: .2em;
       text-transform: uppercase;
       margin-bottom: .1em;
@@ -1421,20 +1418,20 @@
     .wg-meal {
       font-family: 'Playfair Display', serif;
       font-size: clamp(.85rem, 2.2vw, 1.45rem);
-      color: #C7D0E8;
+      color: #2A3A5C;
       font-weight: 400;
       line-height: 1.25;
     }
     .wg-day.today .wg-meal {
       font-weight: 700;
-      color: #FFFFFF;
+      color: #0A1C4A;
     }
-    .wg-meal.empty { color: rgba(255,255,255,.28); font-style: italic; font-weight: 300; }
+    .wg-meal.empty { color: rgba(14,51,134,.3); font-style: italic; font-weight: 300; }
     .wg-desc {
       font-family: 'Playfair Display', serif;
       font-style: italic;
       font-size: clamp(.65rem, 1.6vw, 1rem);
-      color: rgba(255,255,255,.5);
+      color: rgba(14,51,134,.5);
       line-height: 1.2;
     }
     .wg-cubs {
@@ -1442,9 +1439,9 @@
       font-family: 'DM Sans', sans-serif;
       font-size: clamp(.85rem, 2.2vw, 1.45rem); /* same as .wg-meal */
       font-weight: 600;
-      color: rgba(255,255,255,.75);
+      color: rgba(14,51,134,.8);
       letter-spacing: .02em;
-      margin-top: .1em;
+      margin-top: .15em;
       line-height: 1;
     }
     .wg-cubs-logo {
@@ -1452,13 +1449,15 @@
       height: clamp(.9rem, 2.2vw, 1.55rem);
       flex-shrink: 0;
       border-radius: 50%;
-      background: rgba(255,255,255,.88);
-      padding: .15em;
+      background: #FFFFFF;
+      border: 1px solid rgba(14,51,134,.2);
+      box-shadow: 0 1px 3px rgba(14,51,134,.18);
+      padding: .13em;
       box-sizing: border-box;
       object-fit: contain;
     }
-    .wg-cubs.live { color: #F07070; animation: cubslive 1.6s ease-in-out infinite; }
-    @keyframes cubslive { 0%,100% { opacity: 1; } 50% { opacity: .55; } }
+    .wg-cubs.live { color: #CC3433; animation: cubslive 1.6s ease-in-out infinite; }
+    @keyframes cubslive { 0%,100% { opacity: 1; } 50% { opacity: .5; } }
     .wg-version {
       position: absolute;
       bottom: .35em; right: .6em;
@@ -1466,7 +1465,7 @@
       font-size: .6rem;
       font-weight: 600;
       letter-spacing: .05em;
-      color: rgba(255,255,255,.22);
+      color: rgba(14,51,134,.28);
     }
 
     /* ════════════════ DESKTOP LAYOUT ════════════════ */
@@ -1569,7 +1568,7 @@
     <div class="wg-corner bl"></div>
     <div class="wg-corner br"></div>
     <!-- Diagnostic only: confirms which build this display is actually running -->
-    <div class="wg-version">v21</div>
+    <div class="wg-version">v22</div>
     <div class="wg-title">
       <div class="wg-restaurant-name">Hunter's Hearth</div>
       <div class="wg-subtitle">Est. 1999 &nbsp;·&nbsp; Family Table</div>
@@ -1594,7 +1593,7 @@
     <button class="login-btn" id="login-btn">Unlock List →</button>
   </div>
   <!-- Version label: keep in sync with CACHE_NAME in sw.js on every release -->
-  <div style="position:relative;z-index:1;margin-top:1.1rem;color:rgba(255,255,255,.38);font-size:.7rem;font-weight:600;letter-spacing:.1em">v21</div>
+  <div style="position:relative;z-index:1;margin-top:1.1rem;color:rgba(255,255,255,.38);font-size:.7rem;font-weight:600;letter-spacing:.1em">v22</div>
 </div>
 
 <!-- ── TOAST ── -->
@@ -4085,7 +4084,7 @@ function initWidget() {
       renderWidget(currentMeals, widgetRecipes, cubsByDate);
     }, err => {
       document.getElementById('wg-days').innerHTML =
-        '<div style="grid-row:1/-1;display:flex;align-items:center;justify-content:center;text-align:center;color:rgba(255,255,255,.55);font-style:italic;padding:2rem">Could not load the menu — check the network connection.</div>';
+        '<div style="grid-row:1/-1;display:flex;align-items:center;justify-content:center;text-align:center;color:rgba(14,51,134,.5);font-style:italic;padding:2rem">Could not load the menu — check the network connection.</div>';
     });
   }
 
