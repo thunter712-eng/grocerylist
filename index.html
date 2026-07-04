@@ -1388,8 +1388,11 @@
     .wg-day.today .wg-day-header::after { background: rgba(224,85,85,.5); }
     .wg-day.today .wg-name {
       color: #FF8A85;
-      font-size: clamp(1.3rem, 3.4vw, 2.3rem);
-      letter-spacing: .18em;
+      /* Trimmed from the original clamp(1.3rem,3.4vw,2.3rem) — that plus the
+         Tonight label and a game line no longer fit today's row at common
+         1080p display heights. Still visibly bigger than the other days. */
+      font-size: clamp(1.15rem, 2.9vw, 1.95rem);
+      letter-spacing: .16em;
       text-shadow: 0 0 14px rgba(224,85,85,.5);
     }
     .wg-tonight-label {
@@ -1560,7 +1563,7 @@
     <div class="wg-corner bl"></div>
     <div class="wg-corner br"></div>
     <!-- Diagnostic only: confirms which build this display is actually running -->
-    <div class="wg-version">v15</div>
+    <div class="wg-version">v16</div>
     <div class="wg-title">
       <div class="wg-restaurant-name">Hunter's Hearth</div>
       <div class="wg-subtitle">Est. 1999 &nbsp;·&nbsp; Family Table</div>
@@ -1585,7 +1588,7 @@
     <button class="login-btn" id="login-btn">Unlock List →</button>
   </div>
   <!-- Version label: keep in sync with CACHE_NAME in sw.js on every release -->
-  <div style="position:relative;z-index:1;margin-top:1.1rem;color:rgba(255,255,255,.38);font-size:.7rem;font-weight:600;letter-spacing:.1em">v15</div>
+  <div style="position:relative;z-index:1;margin-top:1.1rem;color:rgba(255,255,255,.38);font-size:.7rem;font-weight:600;letter-spacing:.1em">v16</div>
 </div>
 
 <!-- ── TOAST ── -->

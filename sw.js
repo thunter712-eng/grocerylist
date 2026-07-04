@@ -1,7 +1,7 @@
 // Service worker: network-first strategy
 // Always tries the network for fresh content, falls back to cache when offline
 
-const CACHE_NAME = 'dwhf-v15';
+const CACHE_NAME = 'dwhf-v16';
 const ASSETS = [
   './',
   './index.html',
