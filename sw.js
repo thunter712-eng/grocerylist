@@ -1,7 +1,7 @@
 // Service worker: network-first strategy
 // Always tries the network for fresh content, falls back to cache when offline
 
-const CACHE_NAME = 'dwhf-v3';
+const CACHE_NAME = 'dwhf-v4';
 const ASSETS = [
   './',
   './index.html',
@@ -13,13 +13,18 @@ const ASSETS = [
   './manifest.json'
 ];
 
-// Pre-cache core assets on install
+// Pre-cache core assets on install.
+// No skipWaiting here — the new version waits until the user taps the
+// in-app "Update available" banner (which posts SKIP_WAITING below).
 self.addEventListener('install', e => {
   e.waitUntil(
     caches.open(CACHE_NAME)
       .then(cache => cache.addAll(ASSETS))
-      .then(() => self.skipWaiting())
   );
+});
+
+self.addEventListener('message', e => {
+  if (e.data === 'SKIP_WAITING') self.skipWaiting();
 });
 
 // Clean up old caches on activate

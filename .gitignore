@@ -1,1 +1,13 @@
 .DS_Store
+
+# Personal / working images not used by the app
+daughters_smiling.png
+HunterGroceryListIcon.png
+fridgicon.png
+fridgicon2.png
+icon-new.svg
+
+# Worker local files
+worker/node_modules/
+worker/.env.deploy
+worker/.wrangler/
