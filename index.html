@@ -1553,7 +1553,7 @@
     <button class="login-btn" id="login-btn">Unlock List →</button>
   </div>
   <!-- Version label: keep in sync with CACHE_NAME in sw.js on every release -->
-  <div style="position:relative;z-index:1;margin-top:1.1rem;color:rgba(255,255,255,.38);font-size:.7rem;font-weight:600;letter-spacing:.1em">v10</div>
+  <div style="position:relative;z-index:1;margin-top:1.1rem;color:rgba(255,255,255,.38);font-size:.7rem;font-weight:600;letter-spacing:.1em">v11</div>
 </div>
 
 <!-- ── TOAST ── -->
@@ -3985,10 +3985,8 @@ function initWidget() {
       currentMeals = snap.exists() ? (snap.data().meals||[]) : [];
       renderWidget(currentMeals, widgetRecipes);
     }, err => {
-      if (err.code === 'permission-denied') {
-        document.getElementById('wg-days').innerHTML =
-          '<div style="grid-row:1/-1;display:flex;align-items:center;justify-content:center;text-align:center;color:rgba(255,255,255,.55);font-style:italic;padding:2rem">Open the app (without ?widget) and log in once on this device to show the menu.</div>';
-      }
+      document.getElementById('wg-days').innerHTML =
+        '<div style="grid-row:1/-1;display:flex;align-items:center;justify-content:center;text-align:center;color:rgba(255,255,255,.55);font-style:italic;padding:2rem">Could not load the menu — check the network connection.</div>';
     });
   }
 
