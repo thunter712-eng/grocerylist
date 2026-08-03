@@ -6,7 +6,7 @@
   <title>Do We Have Food?</title>
   <link rel="preconnect" href="https://fonts.googleapis.com">
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
-  <link href="https://fonts.googleapis.com/css2?family=Playfair+Display:ital,wght@0,700;1,400;1,600&family=DM+Sans:opsz,wght@9..40,300;9..40,400;9..40,500;9..40,600;9..40,700&family=Caveat:wght@400;600;700&display=swap" rel="stylesheet">
+  <link href="https://fonts.googleapis.com/css2?family=Playfair+Display:ital,wght@0,700;1,400;1,600&family=DM+Sans:opsz,wght@9..40,300;9..40,400;9..40,500;9..40,600;9..40,700&family=Caveat:wght@400;600;700&family=Architects+Daughter&display=swap" rel="stylesheet">
   <link rel="apple-touch-icon" sizes="180x180" href="apple-touch-icon.png">
   <link rel="apple-touch-icon" sizes="152x152" href="icon-152.png">
   <link rel="apple-touch-icon" sizes="167x167" href="icon-167.png">
@@ -1267,205 +1267,227 @@
     .picker-item-star.on { color: #F4A623; }
 
     /* ════════════════ MENU WIDGET ════════════════ */
-    /* "Wrigley Marquee" theme — night-sky navy + marquee red, evoking the
-       lit-up red sign over Wrigley Field. Colors are hardcoded (not tied to
-       var()) so the widget looks the same regardless of device dark-mode
-       setting. Original brown-parchment theme backed up in
-       widget-theme-backups/brown-parchment.css */
-    /* "Pinstripe Jersey" theme — white field + Cubbie-blue pinstripes,
-       like the home uniform. Hardcoded (not tied to var()) so the widget
-       looks the same regardless of device dark-mode setting. Previous
-       "Wrigley Marquee" theme backed up in
-       widget-theme-backups/wrigley-marquee.css */
+    /* "Torn Notepad" theme — a sheet of ruled notepaper torn from a pad and
+       pinned to the DakBoard corkboard, matching the board's own agenda
+       widget. The outer background is TRANSPARENT on purpose so the board's
+       cork shows through around/behind the sheet.
+       Colors are hardcoded (not tied to var()) so the widget looks the same
+       regardless of the device's dark-mode setting.
+       Previous themes backed up in widget-theme-backups/:
+         brown-parchment.css · wrigley-marquee.css · pinstripe-jersey.css   */
+    html.widget-mode, html.widget-mode body {
+      background: transparent !important;
+      max-width: none;
+      margin: 0;
+    }
     #widget-view {
       position: fixed; inset: 0;
-      background: repeating-linear-gradient(90deg,
-        transparent 0, transparent 20px,
-        rgba(14,51,134,.16) 20px, rgba(14,51,134,.16) 22px), #FDFDFC;
+      background: transparent;
       display: none;
-      padding: 3%;
-      font-family: 'Playfair Display', serif;
+      padding: 1.6% 1.8% 2.2%;
+      font-family: 'Architects Daughter', 'Caveat', cursive;
+      /* Ink palette */
+      --nb-paper:  #F4F3EF;
+      --nb-ink:    #4A4A47;
+      --nb-faint:  #9A9A93;
+      --nb-rule:   rgba(70,70,64,.10);
+      --nb-accent: #B4423C;   /* pushpin red — marks today */
     }
     #widget-view.show { display: flex; }
-    .wg-frame {
+
+    /* Wrapper carries the drop shadow: a mask (used for the torn edge below)
+       clips box-shadow, but drop-shadow() traces the masked silhouette. */
+    .wg-sheet {
       flex: 1; height: 100%;
-      display: flex; flex-direction: column;
-      border: 2px solid rgba(204,52,51,.55);
-      border-radius: 2px;
-      padding: 2.5% 6% 2%;
       position: relative;
+      filter: drop-shadow(0 .18em .5em rgba(40,30,15,.34));
+    }
+    .wg-frame {
+      height: 100%;
+      display: flex; flex-direction: column;
       box-sizing: border-box;
-      box-shadow: inset 0 0 0 5px #FDFDFC, inset 0 0 0 6px rgba(14,51,134,.18);
+      padding: 3.2% 4.5% 2%;
+      --nb-line: 2.4vh;
+      /* Ruled paper: faint horizontal rules over a warm off-white sheet */
+      background:
+        repeating-linear-gradient(180deg,
+          transparent 0, transparent calc(var(--nb-line) - 1px),
+          var(--nb-rule) calc(var(--nb-line) - 1px), var(--nb-rule) var(--nb-line)),
+        linear-gradient(175deg, #FAF9F6 0%, var(--nb-paper) 55%, #EDECE7 100%);
+      /* Torn-from-the-pad top edge: each tile bites a semicircle out of the
+         top. Tile width = notch diameter, so notches sit shoulder to shoulder. */
+      --nb-tooth: 2.4vw;
+      -webkit-mask-image: radial-gradient(circle at 50% 0,
+        rgba(0,0,0,0) 0 calc(var(--nb-tooth) / 2 - 1px), #000 calc(var(--nb-tooth) / 2));
+      -webkit-mask-size: var(--nb-tooth) 100%;
+      -webkit-mask-repeat: repeat-x;
+      mask-image: radial-gradient(circle at 50% 0,
+        rgba(0,0,0,0) 0 calc(var(--nb-tooth) / 2 - 1px), #000 calc(var(--nb-tooth) / 2));
+      mask-size: var(--nb-tooth) 100%;
+      mask-repeat: repeat-x;
     }
-    /* Corner ornaments */
-    .wg-corner {
+    /* Pushpin holding the sheet — lives outside the masked element so the
+       torn edge doesn't clip it. */
+    .wg-pin {
       position: absolute;
-      font-size: clamp(.7rem, 1.8vw, 1.1rem);
-      color: rgba(204,52,51,.55);
-      line-height: 1;
-      font-style: normal;
+      top: -.9%; left: 50%;
+      width: clamp(1.1rem, 2.6vw, 2rem);
+      height: clamp(1.1rem, 2.6vw, 2rem);
+      transform: translateX(-50%);
+      border-radius: 50%;
+      background:
+        radial-gradient(circle at 34% 30%, #7C7C82 0 12%, #43434A 42%, #17171C 78%, #0B0B0F 100%);
+      box-shadow: 0 .12em .28em rgba(30,20,10,.5), inset 0 -.08em .16em rgba(0,0,0,.6);
+      z-index: 2;
     }
-    .wg-corner::before { content: '❧'; }
-    .wg-corner.tl { top:.4em; left:.5em; transform: scaleX(-1) rotate(180deg); }
-    .wg-corner.tr { top:.4em; right:.5em; transform: rotate(180deg); }
-    .wg-corner.bl { bottom:.4em; left:.5em; }
-    .wg-corner.br { bottom:.4em; right:.5em; transform: scaleX(-1); }
     .wg-title {
       text-align: center;
-      padding: .1em 0 0;
       flex-shrink: 0;
+      padding-bottom: .1em;
+      margin-bottom: .3em;
+      border-bottom: 1.5px solid rgba(70,70,64,.22);
     }
     .wg-restaurant-name {
-      font-family: 'Playfair Display', serif;
-      font-style: normal;
-      font-size: clamp(1.5rem, 4vw, 2.8rem);
-      font-weight: 700;
-      color: #0E3386;
-      letter-spacing: .2em;
-      text-transform: uppercase;
-      line-height: 1.1;
+      font-family: 'Architects Daughter', cursive;
+      font-size: clamp(1.2rem, 3.6vw, 2.6rem);
+      color: var(--nb-ink);
+      letter-spacing: .01em;
+      line-height: 1.05;
     }
     .wg-subtitle {
-      font-family: 'DM Sans', sans-serif;
-      font-size: clamp(.65rem, 1.4vw, 1rem);
-      font-weight: 400;
-      color: rgba(14,51,134,.55);
-      letter-spacing: .28em;
-      text-transform: uppercase;
-      margin-top: .15em;
-    }
-    .wg-divider {
-      display: flex; align-items: center; gap: .4em;
-      margin: .25em 0;
-      flex-shrink: 0;
-      color: #CC3433;
-      font-size: clamp(.7rem, 1.6vw, 1.15rem);
-    }
-    .wg-divider::before,
-    .wg-divider::after {
-      content: '';
-      flex: 1;
-      height: 1px;
-      background: rgba(14,51,134,.25);
+      font-family: 'Architects Daughter', cursive;
+      font-size: clamp(.62rem, 1.5vw, 1.1rem);
+      color: var(--nb-faint);
+      letter-spacing: .05em;
+      margin-top: .1em;
     }
     .wg-days {
       flex: 1;
       display: grid;
       grid-template-rows: repeat(7, 1fr);
       min-height: 0;
+      gap: .4%;
     }
     .wg-day {
       display: flex;
       flex-direction: column;
-      align-items: center;
       justify-content: center;
       min-height: 0; overflow: hidden;
-      border-bottom: 1px solid rgba(14,51,134,.14);
-      padding: .2% 0;
     }
-    .wg-day:last-child { border-bottom: none; }
+    /* ── "05 wednesday" heading ── */
     .wg-day-header {
-      display: flex; align-items: center; gap: .5em;
-      width: 100%;
+      display: flex; align-items: baseline; gap: .38em;
+      padding-left: .1em;
+      line-height: 1;
     }
-    .wg-day-header::before,
-    .wg-day-header::after {
-      content: '';
-      flex: 1; height: 1px;
-      background: rgba(14,51,134,.2);
+    .wg-date {
+      font-family: 'Architects Daughter', cursive;
+      font-size: clamp(1.15rem, 3.4vw, 2.5rem);
+      color: var(--nb-ink);
+      line-height: 1;
+      flex-shrink: 0;
     }
     .wg-name {
-      font-family: 'Playfair Display', serif;
-      font-size: clamp(.9rem, 2.2vw, 1.55rem);
-      color: #0E3386;
-      text-transform: uppercase;
-      letter-spacing: .13em;
-      font-weight: 700;
+      font-family: 'Architects Daughter', cursive;
+      font-size: clamp(.8rem, 2.1vw, 1.55rem);
+      color: var(--nb-faint);
+      line-height: 1;
       white-space: nowrap;
       flex-shrink: 0;
     }
-    .wg-day.today {
-      background: rgba(204,52,51,.08);
-      border-radius: 4px;
-      padding: .5% 2%;
-      margin: 0 -2%;
-    }
-    .wg-day.today .wg-day-header::before,
-    .wg-day.today .wg-day-header::after { background: rgba(204,52,51,.4); }
-    .wg-day.today .wg-name {
-      color: #CC3433;
-      font-size: clamp(1rem, 2.5vw, 1.7rem);
-      letter-spacing: .16em;
-    }
+    .wg-day.today .wg-date,
+    .wg-day.today .wg-name { color: var(--nb-accent); }
     .wg-tonight-label {
-      font-family: 'DM Sans', sans-serif;
-      font-size: clamp(.5rem, 1.2vw, .8rem);
-      font-weight: 700;
-      color: #CC3433;
-      letter-spacing: .2em;
-      text-transform: uppercase;
-      margin-bottom: .1em;
+      font-family: 'Architects Daughter', cursive;
+      font-size: clamp(.6rem, 1.5vw, 1.1rem);
+      color: var(--nb-accent);
+      margin-left: auto;
+      padding-right: .2em;
+      white-space: nowrap;
+    }
+    /* ── Event row: grey band with a white index tab on the left ── */
+    .wg-row {
+      display: flex; align-items: center;
+      margin-top: .18em;
+      background: rgba(70,70,64,.055);
+      border-top: 1px solid rgba(70,70,64,.10);
+      border-bottom: 1px solid rgba(70,70,64,.10);
+      padding: .1em .6em .12em 0;
+      min-width: 0; overflow: hidden;
+    }
+    .wg-row::before {
+      content: '';
+      align-self: stretch;
+      width: .42em;
+      margin-right: .85em;
+      background: #FDFDFB;
+      flex-shrink: 0;
+    }
+    .wg-day.today .wg-row { background: rgba(180,66,60,.09); }
+    .wg-day.today .wg-row::before { background: var(--nb-accent); }
+    .wg-row-label {
+      font-family: 'Architects Daughter', cursive;
+      font-size: clamp(.72rem, 1.9vw, 1.4rem);
+      color: var(--nb-faint);
+      width: 26%;
+      min-width: 3.4em;
+      flex-shrink: 0;
+      white-space: nowrap;
+      line-height: 1.2;
     }
     .wg-meal-block {
-      display: flex;
-      flex-direction: column;
-      align-items: center;
-      text-align: center;
-      width: 100%;
+      flex: 1;
       min-width: 0;
+      display: flex; flex-direction: column;
       overflow: hidden;
     }
     .wg-meal {
-      font-family: 'Playfair Display', serif;
-      font-size: clamp(.85rem, 2.2vw, 1.45rem);
-      color: #2A3A5C;
-      font-weight: 400;
-      line-height: 1.25;
-    }
-    .wg-day.today .wg-meal {
-      font-weight: 700;
-      color: #0A1C4A;
-    }
-    .wg-meal.empty { color: rgba(14,51,134,.3); font-style: italic; font-weight: 300; }
-    .wg-desc {
-      font-family: 'Playfair Display', serif;
-      font-style: italic;
-      font-size: clamp(.65rem, 1.6vw, 1rem);
-      color: rgba(14,51,134,.5);
+      font-family: 'Architects Daughter', cursive;
+      font-size: clamp(.88rem, 2.45vw, 1.8rem);
+      color: var(--nb-ink);
       line-height: 1.2;
+      white-space: nowrap;
+      overflow: hidden;
+      text-overflow: ellipsis;
+    }
+    .wg-day.today .wg-meal { color: #2E2E2B; }
+    /* NB: not ".empty" — that class is taken by the app's global empty-state
+       block (4rem padding), which would balloon the row. */
+    .wg-meal.wg-empty { color: rgba(120,120,112,.6); }
+    .wg-desc {
+      font-family: 'Architects Daughter', cursive;
+      font-size: clamp(.66rem, 1.65vw, 1.2rem);
+      color: var(--nb-faint);
+      line-height: 1.15;
+      white-space: nowrap;
+      overflow: hidden;
+      text-overflow: ellipsis;
     }
     .wg-cubs {
-      display: flex; align-items: center; justify-content: center; gap: .4em;
-      font-family: 'DM Sans', sans-serif;
-      font-size: clamp(.85rem, 2.2vw, 1.45rem); /* same as .wg-meal */
-      font-weight: 600;
-      color: rgba(14,51,134,.8);
-      letter-spacing: .02em;
-      margin-top: .15em;
+      display: flex; align-items: center; gap: .38em;
+      font-family: 'Architects Daughter', cursive;
+      font-size: clamp(.78rem, 2.05vw, 1.5rem);
+      color: #5A5A55;
       line-height: 1;
+      min-width: 0;
+      white-space: nowrap;
+      overflow: hidden;
     }
     .wg-cubs-logo {
-      width: clamp(.9rem, 2.2vw, 1.55rem);  /* same as .wg-name (day heading) */
-      height: clamp(.9rem, 2.2vw, 1.55rem);
+      width: clamp(.85rem, 2.2vw, 1.6rem);
+      height: clamp(.85rem, 2.2vw, 1.6rem);
       flex-shrink: 0;
-      border-radius: 50%;
-      background: #FFFFFF;
-      border: 1px solid rgba(14,51,134,.2);
-      box-shadow: 0 1px 3px rgba(14,51,134,.18);
-      padding: .13em;
-      box-sizing: border-box;
       object-fit: contain;
     }
-    .wg-cubs.live { color: #CC3433; animation: cubslive 1.6s ease-in-out infinite; }
+    .wg-cubs.live { color: var(--nb-accent); animation: cubslive 1.6s ease-in-out infinite; }
     @keyframes cubslive { 0%,100% { opacity: 1; } 50% { opacity: .5; } }
     .wg-version {
       position: absolute;
-      bottom: .35em; right: .6em;
-      font-family: 'DM Sans', sans-serif;
-      font-size: .6rem;
-      font-weight: 600;
-      letter-spacing: .05em;
-      color: rgba(14,51,134,.28);
+      bottom: .4em; right: .7em;
+      font-family: 'Architects Daughter', cursive;
+      font-size: clamp(.5rem, 1.1vw, .8rem);
+      color: rgba(70,70,64,.3);
+      z-index: 2;
     }
 
     /* ════════════════ DESKTOP LAYOUT ════════════════ */
@@ -1562,19 +1584,17 @@
 
 <!-- ── CHALKBOARD WIDGET ── -->
 <div id="widget-view">
-  <div class="wg-frame">
-    <div class="wg-corner tl"></div>
-    <div class="wg-corner tr"></div>
-    <div class="wg-corner bl"></div>
-    <div class="wg-corner br"></div>
+  <div class="wg-sheet">
+    <div class="wg-pin"></div>
     <!-- Diagnostic only: confirms which build this display is actually running -->
-    <div class="wg-version">v22</div>
-    <div class="wg-title">
-      <div class="wg-restaurant-name">Hunter's Hearth</div>
-      <div class="wg-subtitle">Est. 1999 &nbsp;·&nbsp; Family Table</div>
+    <div class="wg-version">v24</div>
+    <div class="wg-frame">
+      <div class="wg-title">
+        <div class="wg-restaurant-name">Hunter's Hearth</div>
+        <div class="wg-subtitle">what's for dinner</div>
+      </div>
+      <div class="wg-days" id="wg-days"></div>
     </div>
-    <div class="wg-divider">✦</div>
-    <div class="wg-days" id="wg-days"></div>
   </div>
 </div>
 
@@ -4055,6 +4075,9 @@ function summarizeCubsGame(g) {
 
 function initWidget() {
   document.getElementById('login-screen').style.display = 'none';
+  // Clear the app's opaque pinstripe page background so the DakBoard corkboard
+  // shows through around the notepad sheet.
+  document.documentElement.classList.add('widget-mode');
   document.getElementById('widget-view').classList.add('show');
 
   let widgetRecipes = [];
@@ -4132,36 +4155,41 @@ function renderWidget(meals, widgetRecipes, cubsByDate) {
     const isToday = date.getTime()===today.getTime();
     const cubs = cubsByDate[localDateStr(date)];
     let desc = '';
-    // Skip the ingredient preview when a Cubs line is also showing — the
-    // score/logos are now sized to match the meal name and day heading,
-    // and there isn't room for a 4th stacked line on the same row.
+    // Skip the ingredient preview when a Cubs line is also showing — both
+    // stack inside the same event band and there isn't room for a third line.
     if (meal && meal.recipeId && !cubs) {
       const recipe = widgetRecipes.find(r=>r.id===meal.recipeId);
       if (recipe && recipe.ingredients && recipe.ingredients.length) {
         desc = recipe.ingredients.slice(0,3).map(i=>i.name||i).filter(Boolean).join(' · ');
       }
     }
+    // Two-digit date, matching the notepad agenda style ("05 wednesday")
+    const dd = String(date.getDate()).padStart(2,'0');
     return `<div class="wg-day${isToday?' today':''}">
       <div class="wg-day-header">
-        <span class="wg-name">${name.toUpperCase()}</span>
+        <span class="wg-date">${dd}</span>
+        <span class="wg-name">${name.toLowerCase()}</span>
+        ${isToday ? `<span class="wg-tonight-label">tonight</span>` : ''}
       </div>
-      <div class="wg-meal-block">
-        ${isToday ? `<span class="wg-tonight-label">Tonight</span>` : ''}
-        <span class="wg-meal${meal?'':' empty'}">${meal ? esc(meal.recipeName) : '—'}</span>
-        ${desc ? `<span class="wg-desc">${esc(desc)}</span>` : ''}
-        ${cubs ? `<span class="wg-cubs${cubs.live?' live':''}">
-          <img class="wg-cubs-logo" src="https://www.mlbstatic.com/team-logos/${CUBS_TEAM_ID}.svg" alt="" onerror="this.style.display='none'">
-          ${esc(cubs.text)}
-          <img class="wg-cubs-logo" src="https://www.mlbstatic.com/team-logos/${cubs.oppId}.svg" alt="" onerror="this.style.display='none'">
-        </span>` : ''}
+      <div class="wg-row">
+        <span class="wg-row-label">Dinner</span>
+        <span class="wg-meal-block">
+          <span class="wg-meal${meal?'':' wg-empty'}">${meal ? esc(meal.recipeName) : '—'}</span>
+          ${desc ? `<span class="wg-desc">${esc(desc)}</span>` : ''}
+          ${cubs ? `<span class="wg-cubs${cubs.live?' live':''}">
+            <img class="wg-cubs-logo" src="https://www.mlbstatic.com/team-logos/${CUBS_TEAM_ID}.svg" alt="" onerror="this.style.display='none'">
+            ${esc(cubs.text)}
+            <img class="wg-cubs-logo" src="https://www.mlbstatic.com/team-logos/${cubs.oppId}.svg" alt="" onerror="this.style.display='none'">
+          </span>` : ''}
+        </span>
       </div>
     </div>`;
   }).join('');
 
-  // Today's row carries one more stacked line than the rest (Tonight label +
-  // meal + game line, vs. just meal + game line) — equal-height grid rows
-  // shortchange it specifically, clipping the game line at common display
-  // sizes. Give it a proportionally larger share regardless of resolution.
+  // Today's band carries one more stacked line than the rest (meal + game line
+  // vs. just the meal) — equal-height grid rows shortchange it specifically,
+  // clipping the game line at common display sizes. Give it a proportionally
+  // larger share regardless of resolution.
   const todayIdx = day; // DAYS[] and grid rows are both Sun-first, index 0-6
   document.getElementById('wg-days').style.gridTemplateRows =
     DAYS.map((_,i) => i===todayIdx ? '1.2fr' : '1fr').join(' ');

@@ -1,0 +1,201 @@
+    /* ════════════════ MENU WIDGET ════════════════ */
+    /* "Wrigley Marquee" theme — night-sky navy + marquee red, evoking the
+       lit-up red sign over Wrigley Field. Colors are hardcoded (not tied to
+       var()) so the widget looks the same regardless of device dark-mode
+       setting. Original brown-parchment theme backed up in
+       widget-theme-backups/brown-parchment.css */
+    /* "Pinstripe Jersey" theme — white field + Cubbie-blue pinstripes,
+       like the home uniform. Hardcoded (not tied to var()) so the widget
+       looks the same regardless of device dark-mode setting. Previous
+       "Wrigley Marquee" theme backed up in
+       widget-theme-backups/wrigley-marquee.css */
+    #widget-view {
+      position: fixed; inset: 0;
+      background: repeating-linear-gradient(90deg,
+        transparent 0, transparent 20px,
+        rgba(14,51,134,.16) 20px, rgba(14,51,134,.16) 22px), #FDFDFC;
+      display: none;
+      padding: 3%;
+      font-family: 'Playfair Display', serif;
+    }
+    #widget-view.show { display: flex; }
+    .wg-frame {
+      flex: 1; height: 100%;
+      display: flex; flex-direction: column;
+      border: 2px solid rgba(204,52,51,.55);
+      border-radius: 2px;
+      padding: 2.5% 6% 2%;
+      position: relative;
+      box-sizing: border-box;
+      box-shadow: inset 0 0 0 5px #FDFDFC, inset 0 0 0 6px rgba(14,51,134,.18);
+    }
+    /* Corner ornaments */
+    .wg-corner {
+      position: absolute;
+      font-size: clamp(.7rem, 1.8vw, 1.1rem);
+      color: rgba(204,52,51,.55);
+      line-height: 1;
+      font-style: normal;
+    }
+    .wg-corner::before { content: '❧'; }
+    .wg-corner.tl { top:.4em; left:.5em; transform: scaleX(-1) rotate(180deg); }
+    .wg-corner.tr { top:.4em; right:.5em; transform: rotate(180deg); }
+    .wg-corner.bl { bottom:.4em; left:.5em; }
+    .wg-corner.br { bottom:.4em; right:.5em; transform: scaleX(-1); }
+    .wg-title {
+      text-align: center;
+      padding: .1em 0 0;
+      flex-shrink: 0;
+    }
+    .wg-restaurant-name {
+      font-family: 'Playfair Display', serif;
+      font-style: normal;
+      font-size: clamp(1.5rem, 4vw, 2.8rem);
+      font-weight: 700;
+      color: #0E3386;
+      letter-spacing: .2em;
+      text-transform: uppercase;
+      line-height: 1.1;
+    }
+    .wg-subtitle {
+      font-family: 'DM Sans', sans-serif;
+      font-size: clamp(.65rem, 1.4vw, 1rem);
+      font-weight: 400;
+      color: rgba(14,51,134,.55);
+      letter-spacing: .28em;
+      text-transform: uppercase;
+      margin-top: .15em;
+    }
+    .wg-divider {
+      display: flex; align-items: center; gap: .4em;
+      margin: .25em 0;
+      flex-shrink: 0;
+      color: #CC3433;
+      font-size: clamp(.7rem, 1.6vw, 1.15rem);
+    }
+    .wg-divider::before,
+    .wg-divider::after {
+      content: '';
+      flex: 1;
+      height: 1px;
+      background: rgba(14,51,134,.25);
+    }
+    .wg-days {
+      flex: 1;
+      display: grid;
+      grid-template-rows: repeat(7, 1fr);
+      min-height: 0;
+    }
+    .wg-day {
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      justify-content: center;
+      min-height: 0; overflow: hidden;
+      border-bottom: 1px solid rgba(14,51,134,.14);
+      padding: .2% 0;
+    }
+    .wg-day:last-child { border-bottom: none; }
+    .wg-day-header {
+      display: flex; align-items: center; gap: .5em;
+      width: 100%;
+    }
+    .wg-day-header::before,
+    .wg-day-header::after {
+      content: '';
+      flex: 1; height: 1px;
+      background: rgba(14,51,134,.2);
+    }
+    .wg-name {
+      font-family: 'Playfair Display', serif;
+      font-size: clamp(.9rem, 2.2vw, 1.55rem);
+      color: #0E3386;
+      text-transform: uppercase;
+      letter-spacing: .13em;
+      font-weight: 700;
+      white-space: nowrap;
+      flex-shrink: 0;
+    }
+    .wg-day.today {
+      background: rgba(204,52,51,.08);
+      border-radius: 4px;
+      padding: .5% 2%;
+      margin: 0 -2%;
+    }
+    .wg-day.today .wg-day-header::before,
+    .wg-day.today .wg-day-header::after { background: rgba(204,52,51,.4); }
+    .wg-day.today .wg-name {
+      color: #CC3433;
+      font-size: clamp(1rem, 2.5vw, 1.7rem);
+      letter-spacing: .16em;
+    }
+    .wg-tonight-label {
+      font-family: 'DM Sans', sans-serif;
+      font-size: clamp(.5rem, 1.2vw, .8rem);
+      font-weight: 700;
+      color: #CC3433;
+      letter-spacing: .2em;
+      text-transform: uppercase;
+      margin-bottom: .1em;
+    }
+    .wg-meal-block {
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      text-align: center;
+      width: 100%;
+      min-width: 0;
+      overflow: hidden;
+    }
+    .wg-meal {
+      font-family: 'Playfair Display', serif;
+      font-size: clamp(.85rem, 2.2vw, 1.45rem);
+      color: #2A3A5C;
+      font-weight: 400;
+      line-height: 1.25;
+    }
+    .wg-day.today .wg-meal {
+      font-weight: 700;
+      color: #0A1C4A;
+    }
+    .wg-meal.empty { color: rgba(14,51,134,.3); font-style: italic; font-weight: 300; }
+    .wg-desc {
+      font-family: 'Playfair Display', serif;
+      font-style: italic;
+      font-size: clamp(.65rem, 1.6vw, 1rem);
+      color: rgba(14,51,134,.5);
+      line-height: 1.2;
+    }
+    .wg-cubs {
+      display: flex; align-items: center; justify-content: center; gap: .4em;
+      font-family: 'DM Sans', sans-serif;
+      font-size: clamp(.85rem, 2.2vw, 1.45rem); /* same as .wg-meal */
+      font-weight: 600;
+      color: rgba(14,51,134,.8);
+      letter-spacing: .02em;
+      margin-top: .15em;
+      line-height: 1;
+    }
+    .wg-cubs-logo {
+      width: clamp(.9rem, 2.2vw, 1.55rem);  /* same as .wg-name (day heading) */
+      height: clamp(.9rem, 2.2vw, 1.55rem);
+      flex-shrink: 0;
+      border-radius: 50%;
+      background: #FFFFFF;
+      border: 1px solid rgba(14,51,134,.2);
+      box-shadow: 0 1px 3px rgba(14,51,134,.18);
+      padding: .13em;
+      box-sizing: border-box;
+      object-fit: contain;
+    }
+    .wg-cubs.live { color: #CC3433; animation: cubslive 1.6s ease-in-out infinite; }
+    @keyframes cubslive { 0%,100% { opacity: 1; } 50% { opacity: .5; } }
+    .wg-version {
+      position: absolute;
+      bottom: .35em; right: .6em;
+      font-family: 'DM Sans', sans-serif;
+      font-size: .6rem;
+      font-weight: 600;
+      letter-spacing: .05em;
+      color: rgba(14,51,134,.28);
+    }
