@@ -1490,6 +1490,56 @@
       z-index: 2;
     }
 
+    /* ════════════ GLASS HOLIDAY THEME (?widget=1&theme=glass) ════════════
+       Dark frosted-glass panel for the portrait DAKboard. The iframe stays
+       transparent: DAKboard's own block supplies the blur behind it, this
+       draws the tint, hairline border and holiday accents on top. */
+    html.theme-glass #widget-view {
+      --nb-ink: rgba(255,255,255,.95);
+      --nb-faint: rgba(255,255,255,.62);
+      --nb-rule: transparent;
+      --nb-accent: #FF8077;
+      --gl-red: #E5534B;
+      --gl-green: #5BBF8A;
+      padding: 0;
+    }
+    html.theme-glass #widget-view * {
+      font-family: -apple-system, "SF Pro Display", Inter, Roboto, sans-serif !important;
+      text-shadow: 0 1px 2px rgba(0,0,0,.35);
+    }
+    html.theme-glass .wg-pin { display: none; }
+    html.theme-glass .wg-sheet { filter: none; }
+    html.theme-glass .wg-frame {
+      background: linear-gradient(180deg, rgba(255,255,255,.11), rgba(255,255,255,.05));
+      border: .5px solid rgba(255,255,255,.26);
+      border-radius: 24px;
+      box-shadow: inset 0 1px 0 rgba(255,255,255,.30), 0 10px 32px rgba(0,0,0,.30);
+      -webkit-mask-image: none; mask-image: none;
+      padding: 4% 5% 3%;
+    }
+    html.theme-glass .wg-title { border-bottom: .5px solid rgba(255,255,255,.20); padding-bottom: .5em; margin-bottom: .5em; }
+    html.theme-glass .wg-restaurant-name { font-weight: 300; letter-spacing: .01em; }
+    html.theme-glass .wg-subtitle { letter-spacing: .12em; text-transform: uppercase; font-weight: 400; }
+    html.theme-glass .wg-subtitle::before { content: "\2744\FE0E\00a0\00a0"; color: var(--gl-green); }
+    html.theme-glass .wg-subtitle::after  { content: "\00a0\00a0\2744\FE0E"; color: var(--gl-red); }
+    html.theme-glass .wg-date { font-weight: 300; }
+    html.theme-glass .wg-name { font-weight: 400; letter-spacing: .02em; }
+    html.theme-glass .wg-row {
+      background: rgba(255,255,255,.07);
+      border: .5px solid rgba(255,255,255,.14);
+      border-radius: 12px;
+      overflow: hidden;
+    }
+    html.theme-glass .wg-row::before { width: .3em; margin-right: .8em; background: var(--gl-green); }
+    html.theme-glass .wg-day:nth-child(odd) .wg-row::before { background: var(--gl-red); }
+    html.theme-glass .wg-day.today .wg-row { background: rgba(229,83,75,.24); border-color: rgba(255,128,119,.45); }
+    html.theme-glass .wg-day.today .wg-row::before { background: var(--nb-accent); }
+    html.theme-glass .wg-day.today .wg-meal { color: #fff; font-weight: 500; }
+    html.theme-glass .wg-meal { font-weight: 400; }
+    html.theme-glass .wg-meal.wg-empty { color: rgba(255,255,255,.38); }
+    html.theme-glass .wg-cubs { color: rgba(255,255,255,.8); }
+    html.theme-glass .wg-version { color: rgba(255,255,255,.28); }
+
     /* ════════════════ DESKTOP LAYOUT ════════════════ */
     @media (min-width: 768px) {
       body {
@@ -1587,7 +1637,7 @@
   <div class="wg-sheet">
     <div class="wg-pin"></div>
     <!-- Diagnostic only: confirms which build this display is actually running -->
-    <div class="wg-version">v24</div>
+    <div class="wg-version">v26</div>
     <div class="wg-frame">
       <div class="wg-title">
         <div class="wg-restaurant-name">Hunter's Hearth</div>
@@ -1613,7 +1663,7 @@
     <button class="login-btn" id="login-btn">Unlock List →</button>
   </div>
   <!-- Version label: keep in sync with CACHE_NAME in sw.js on every release -->
-  <div style="position:relative;z-index:1;margin-top:1.1rem;color:rgba(255,255,255,.38);font-size:.7rem;font-weight:600;letter-spacing:.1em">v23</div>
+  <div style="position:relative;z-index:1;margin-top:1.1rem;color:rgba(255,255,255,.38);font-size:.7rem;font-weight:600;letter-spacing:.1em">v25</div>
 </div>
 
 <!-- ── TOAST ── -->
@@ -1919,6 +1969,7 @@ const WORKER_URL = 'https://dwhf-proxy.dwhf.workers.dev';
 const CUBS_TEAM_ID = 112;
 
 const IS_WIDGET = new URLSearchParams(location.search).has('widget');
+if (new URLSearchParams(location.search).get('theme') === 'glass') document.documentElement.classList.add('theme-glass');
 if (IS_WIDGET) initWidget();
 
 // ── ACCESS CODE ──
@@ -2320,6 +2371,13 @@ if (!IS_WIDGET && localStorage.getItem('hgl')==='1') {
   document.getElementById('login-screen').style.display = 'none';
   document.getElementById('app').classList.add('visible');
   setTimeout(startApp, 0);
+}
+// Kitchen-iPad auto-unlock: <url>?code=XXXX signs in silently, then drops the code from the URL.
+const AUTO_CODE = new URLSearchParams(location.search).get('code');
+if (!IS_WIDGET && AUTO_CODE && localStorage.getItem('hgl') !== '1') {
+  history.replaceState(null, '', location.pathname);
+  document.getElementById('pwd').value = AUTO_CODE;
+  checkLogin();
 }
 
 // ── FIREBASE LISTENER ──
