@@ -1637,7 +1637,7 @@
   <div class="wg-sheet">
     <div class="wg-pin"></div>
     <!-- Diagnostic only: confirms which build this display is actually running -->
-    <div class="wg-version">v26</div>
+    <div class="wg-version">v27</div>
     <div class="wg-frame">
       <div class="wg-title">
         <div class="wg-restaurant-name">Hunter's Hearth</div>
@@ -2732,6 +2732,8 @@ if ('serviceWorker' in navigator) {
   navigator.serviceWorker.ready.then(reg => {
     const banner = document.getElementById('update-banner');
     const offerUpdate = sw => {
+      // Unattended DAKboard widget: nobody to tap the banner, so install now.
+      if (IS_WIDGET) { userRequestedUpdate = true; sw.postMessage('SKIP_WAITING'); return; }
       banner.classList.add('show');
       banner.onclick = () => {
         userRequestedUpdate = true;
