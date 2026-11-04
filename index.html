@@ -6,7 +6,7 @@
   <title>Do We Have Food?</title>
   <link rel="preconnect" href="https://fonts.googleapis.com">
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
-  <link href="https://fonts.googleapis.com/css2?family=Playfair+Display:ital,wght@0,700;1,400;1,600&family=DM+Sans:opsz,wght@9..40,300;9..40,400;9..40,500;9..40,600;9..40,700&family=Caveat:wght@400;600;700&family=Architects+Daughter&display=swap" rel="stylesheet">
+  <link href="https://fonts.googleapis.com/css2?family=Playfair+Display:ital,wght@0,700;1,400;1,600&family=DM+Sans:opsz,wght@9..40,300;9..40,400;9..40,500;9..40,600;9..40,700&family=Caveat:wght@400;600;700&family=Architects+Daughter&family=Pacifico&family=Varela+Round&display=swap" rel="stylesheet">
   <link rel="apple-touch-icon" sizes="180x180" href="apple-touch-icon.png">
   <link rel="apple-touch-icon" sizes="152x152" href="icon-152.png">
   <link rel="apple-touch-icon" sizes="167x167" href="icon-167.png">
@@ -1540,6 +1540,53 @@
     html.theme-glass .wg-cubs { color: rgba(255,255,255,.8); }
     html.theme-glass .wg-version { color: rgba(255,255,255,.28); }
 
+    /* ════════════ HARVEST THEME (?widget=1&theme=harvest) ════════════
+       Warm translucent-brown panel matching the "Thankful" DAKboard: cream
+       Varela Round text, Pacifico script title, pumpkin/gold/rust/olive tabs. */
+    html.theme-harvest #widget-view {
+      --nb-ink: #FFF8EC;
+      --nb-faint: rgba(255,244,225,.72);
+      --nb-rule: transparent;
+      --nb-accent: #FFB84D;
+      padding: 0;
+    }
+    html.theme-harvest #widget-view * {
+      font-family: "Varela Round", -apple-system, sans-serif !important;
+      text-shadow: 0 1px 3px rgba(0,0,0,.5);
+    }
+    html.theme-harvest .wg-pin { display: none; }
+    html.theme-harvest .wg-sheet { filter: none; }
+    html.theme-harvest .wg-frame {
+      background: rgba(78,52,24,.58);
+      border: .5px solid rgba(255,235,200,.28);
+      border-radius: 12px;
+      box-shadow: inset 0 1px 0 rgba(255,235,200,.22), 0 8px 24px rgba(0,0,0,.28);
+      -webkit-mask-image: none; mask-image: none;
+      padding: 4% 5% 3%;
+    }
+    html.theme-harvest .wg-title { border-bottom: .5px solid rgba(255,235,200,.30); padding-bottom: .4em; margin-bottom: .5em; }
+    html.theme-harvest .wg-restaurant-name { font-family: "Pacifico", cursive !important; font-weight: 400; letter-spacing: 0; }
+    html.theme-harvest .wg-subtitle { letter-spacing: .14em; text-transform: uppercase; }
+    html.theme-harvest .wg-subtitle::before { content: "\1F342\00a0\00a0"; }
+    html.theme-harvest .wg-subtitle::after  { content: "\00a0\00a0\1F342"; }
+    html.theme-harvest .wg-date, html.theme-harvest .wg-name { font-weight: 400; }
+    html.theme-harvest .wg-row {
+      background: rgba(255,240,215,.10);
+      border: .5px solid rgba(255,235,200,.22);
+      border-radius: 9px;
+      overflow: hidden;
+    }
+    html.theme-harvest .wg-row::before { width: .3em; margin-right: .8em; background: #E8892B; }
+    html.theme-harvest .wg-day:nth-child(4n+2) .wg-row::before { background: #D4A72C; }
+    html.theme-harvest .wg-day:nth-child(4n+3) .wg-row::before { background: #B5532F; }
+    html.theme-harvest .wg-day:nth-child(4n+4) .wg-row::before { background: #8C9A3E; }
+    html.theme-harvest .wg-day.today .wg-row { background: rgba(255,184,77,.22); border-color: rgba(255,184,77,.55); }
+    html.theme-harvest .wg-day.today .wg-row::before { background: var(--nb-accent); }
+    html.theme-harvest .wg-day.today .wg-meal { color: #fff; }
+    html.theme-harvest .wg-meal.wg-empty { color: rgba(255,244,225,.42); }
+    html.theme-harvest .wg-cubs { color: rgba(255,248,236,.85); }
+    html.theme-harvest .wg-version { color: rgba(255,244,225,.3); }
+
     /* ════════════════ DESKTOP LAYOUT ════════════════ */
     @media (min-width: 768px) {
       body {
@@ -1637,7 +1684,7 @@
   <div class="wg-sheet">
     <div class="wg-pin"></div>
     <!-- Diagnostic only: confirms which build this display is actually running -->
-    <div class="wg-version">v27</div>
+    <div class="wg-version">v28</div>
     <div class="wg-frame">
       <div class="wg-title">
         <div class="wg-restaurant-name">Hunter's Hearth</div>
@@ -1969,7 +2016,7 @@ const WORKER_URL = 'https://dwhf-proxy.dwhf.workers.dev';
 const CUBS_TEAM_ID = 112;
 
 const IS_WIDGET = new URLSearchParams(location.search).has('widget');
-if (new URLSearchParams(location.search).get('theme') === 'glass') document.documentElement.classList.add('theme-glass');
+{ const t = new URLSearchParams(location.search).get('theme'); if (t === 'glass' || t === 'harvest') document.documentElement.classList.add('theme-' + t); }
 if (IS_WIDGET) initWidget();
 
 // ── ACCESS CODE ──
